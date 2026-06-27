@@ -56,11 +56,13 @@ Age order: `['0-12','13-17','18-40','41-60','61-70','71-80','80+']`.
 ```
 Drishti/
 ├── data/ (README; DROP the 5 CSVs + 4 KMLs here — currently EMPTY)
-├── setu/ __init__ · config · privacy · ingest · matcher_tier1 · validate · registry
+├── setu/ __init__ · config · privacy · ingest · matcher_tier1 · validate · registry ·
+│        vault (B1) · llm · voice
 ├── app/dashboard.py (Streamlit, 6 tabs)
+├── scripts/demo_backend.py (B1/B2/B4 verification — runs with no data, no keys)
 ├── docs/ PERSON_A_CORE.md · PERSON_B_BACKEND.md · PERSON_C_DESIGN.md
 ├── PROGRESS.md · PHASE_LOG.md · CONTEXT.md · README.md · requirements.txt
-└── (todo) setu/matcher_tier2 · voice · geo · drift · blindspot · mesh · scripts/build_geo
+└── (todo) setu/matcher_tier2 · mesh (B5) · geo · drift · blindspot · scripts/build_geo
 ```
 
 ## Team split (parallel branches → merge to main at green checkpoints)
@@ -72,8 +74,13 @@ See `docs/PERSON_*.md`. Stable contracts:
 setu.ingest:        Record, load_records()  -> (records, vault)
 setu.matcher_tier1: find_candidates(target, pool, top_k=3, require_open=False) -> [ScoreResult]
                     ScoreResult(.case_id, .score 0..100, .raw, .reasons dict)
-setu.registry:      init_db, add_record, get_records(open_only, window_hours), set_status,
-                    confirm_match(a, b, actor), seed_from_csv
+setu.registry:      init_db, add_record(rec, rematch=True), set_status, seed_from_csv,
+                    get_records(open_only=False, window_hours=None, reference_time=None),
+                    get_candidates(case_id) -> [dict],     # B2 retroactive matches
+                    confirm_match(a, b, actor, reason) -> {summary, revealed, purged, actor}
+                    # ^ B4: now returns a dict (was a string); raw contact + purge happen here
+setu.vault:         init_vault, put, seed_vault(vault), get(vid, actor=, reason=) -> {} | raw,
+                    purge(vid, actor=), count() -> (live, purged)   # access-controlled raw PII
 setu.privacy:       hash_pii, mask_name, mask_mobile, reveal(case_id, fields, actor, reason), audit
 setu.validate:      run() -> {method_a, method_b}
 ```
@@ -95,8 +102,14 @@ fixture-proven) → **(real data → tag v0.1-number)** → 5 dashboard → 6 ti
   Method B recall@1 90% / @3 100%. **Real number pending real data drop.**
 - Voice done (A4): `setu/voice.py` (Sarvam ASR/TTS/translate) + `setu/llm.py`
   (shared Claude helper). Both degrade cleanly with no keys (verified, no crash).
-- Python 3.14.5, pandas 3.0.2 (rapidfuzz optional, has stdlib fallback).
+- **Backend B1+B2+B4 done on `backend`** (not yet merged): `setu/vault.py` separates raw
+  PII into an access-controlled `setu_vault.db`; `get_records` has a time-window filter;
+  `add_record` fires a retroactive re-match (new `candidates` table + `get_candidates`);
+  `confirm_match` does reveal-on-confirm → audit → purge and returns a dict. Proven by
+  `scripts/demo_backend.py` (no data, no keys → ALL CHECKS PASSED).
+- Python 3.10.12 / pandas 2.3.3 in this env (rapidfuzz optional, stdlib Jaccard fallback).
 - **BLOCKER:** `data/` is empty — user must drop the 5 CSVs + 4 KMLs. Optional keys:
   `SARVAM_API_KEY` (voice), `ANTHROPIC_API_KEY` (Tier-2 + structuring) in `.env`.
+  (Backend logic is data-independent; only the real seed counts + the number wait on data.)
 - **Next:** real `validate` run + threshold tune → tag v0.1-number, then A3 Tier-2
-  (A); registry hardening B1 (B); intake UI + branding C1 (C).
+  (A); B3 sync/merge + B5 mesh, then merge `backend`→`main` (B); intake UI + branding C1 (C).

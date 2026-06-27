@@ -72,3 +72,47 @@ structuring/audio fall back to None as designed. All modules import OK.
 
 **Next:** (A) wait for data → lock the number, then A3 Tier-2. (B) start B1 on
 `backend`. (C) start C1 on `design`. (User) drop data + get SARVAM/ANTHROPIC keys.
+
+---
+
+## 2026-06-27 — Turn 3 — Person B: registry hardening (B1 + B2 + B4)
+
+**Asked:** "I am Person B — go through the repo in depth and make the implementation."
+
+**Did (on branch `backend`, forked from latest `main` so it has A's spine + voice):**
+- **B1 — vault separation.** New `setu/vault.py`: an access-controlled raw-PII store
+  in a SEPARATE SQLite file (`setu_vault.db`, gitignored, chmod 0600). `init_vault`,
+  `put`, `seed_vault`, `get` (audited reveal, honours consent + purge), `purge`
+  (destroys raw, keeps a tombstone), `count`. The `records` table now holds ONLY
+  hashes + de-identified attributes — raw name/mobile never co-mingle with the
+  matchable pool. `registry.seed_from_csv` now loads records → registry.db and raw
+  → vault.db as two stores.
+- **B1 — time window.** `get_records(window_hours=, reference_time=)` scopes the pool
+  to reports within ±window of an anchor time (defaults to the newest `reported_at`),
+  so we never scan the whole historical pool. Robust `_parse_dt` FAILS OPEN so a date
+  format quirk never silently drops a real case.
+- **B2 — retroactive re-match hook.** `add_record(..., rematch=True)` auto-runs
+  `matcher_tier1.find_candidates` against the open, time-windowed pool and persists the
+  top-k into a new `candidates` table. A FOUND report sits open as bait; when the family
+  files anywhere, the match fires BACKWARD and links the two silos. `get_candidates()`
+  reads them in either direction.
+- **B4 — reveal-on-confirm + audit + purge.** `confirm_match` now: marks both Reunited →
+  REVEALS raw contact from the vault (audited, for the operator to act on) → PURGEs raw
+  PII (keeps the hash). **Contract change:** it now returns a dict
+  `{summary, revealed, purged, actor}` instead of a bare string (A/C consume the dict).
+
+**Ran:** `python -m setu.vault` (self-check ✔) and a new `scripts/demo_backend.py`
+that builds Records in Python (NO real data, NO keys) and asserts the whole flow:
+vault has no raw columns in registry; ±72h window excludes the 45-day-old reunited
+case; M1 (family, Center-A) retroactively links to F1 (found, Center-B) at score 82.1
+[STRONG] while the male decoy is gated out; confirm reveals "Sunita Patil / 9812345678"
+then purges it (post-purge reveal denied) while the mobile HASH survives for dedup.
+Audit log shows every REVEAL / PURGE / CONFIRM_MATCH / REVEAL_DENIED line.
+`ALL CHECKS PASSED ✔`. All `setu.*` modules still import.
+
+**Git:** committed on `backend` (not yet merged to main).
+
+**Next (B):** B3 offline queue + sync/merge (UUID dedup, terminal-status-wins, LWW —
+two offline DBs diverge then converge); B5 `mesh.py` simulated DTN demo (sim only,
+first to cut). Then merge `backend` → `main`. The real `seed_from_csv`/vault counts
+still wait on the data drop, but all B logic is data-independent and proven.

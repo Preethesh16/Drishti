@@ -29,7 +29,7 @@ python -m setu.registry     # -> "registry seeded: 2500 records"
 
 ## Phases (each ends with a runnable checkpoint + commit)
 
-### B1 — Registry hardening 🎯 (NEXT)
+### B1 — Registry hardening ✅ (done — `setu/vault.py` + time-window in `get_records`)
 - Confirm `seed_from_csv()` loads all 2,500 into `registry.db`.
 - **Separate the vault**: raw `missing_person_name` / `reporter_mobile` go into a
   distinct access-controlled `setu_vault.db` (gitignored), keyed by `vault_id`.
@@ -38,7 +38,7 @@ python -m setu.registry     # -> "registry seeded: 2500 records"
 - Implement the **time-window** filter in `get_records(window_hours=...)` using
   `reported_at` (never scan the whole pool — only plausible open cases).
 
-### B2 — Retroactive re-match hook
+### B2 — Retroactive re-match hook ✅ (done — `candidates` table + `get_candidates`)
 - When a **new report lands**, automatically run
   `setu.matcher_tier1.find_candidates(new, get_records(open_only=True))` and store
   surfaced candidates. A FOUND report stays open as "bait"; the moment the family
@@ -52,7 +52,7 @@ python -m setu.registry     # -> "registry seeded: 2500 records"
 - **Conflict resolution**: terminal status (`Reunited`) wins; else last-writer-wins.
 - Demo: two offline DBs diverge, then converge on sync with no central coordinator.
 
-### B4 — Reveal-on-confirm + audit + purge
+### B4 — Reveal-on-confirm + audit + purge ✅ (done — wired into `confirm_match`)
 - `confirm_match` already marks both Reunited + writes a `CONFIRM_MATCH` audit line.
 - Wire `privacy.reveal(case_id, vault_fields, actor, reason)` so raw contact surfaces
   ONLY here, with an audit line (who revealed what, when).
@@ -76,10 +76,14 @@ python -m setu.registry     # -> "registry seeded: 2500 records"
 from setu.registry import (
     init_db, add_record, get_records, set_status, confirm_match, seed_from_csv,
 )
-# get_records(open_only=False, window_hours=None) -> list[Record]
-# add_record(Record) -> case_id
-# confirm_match(case_a, case_b, actor="operator") -> audit line
+# get_records(open_only=False, window_hours=None, reference_time=None) -> list[Record]
+# add_record(Record, rematch=True) -> case_id          # rematch fires the B2 hook
+# get_candidates(case_id) -> list[dict]                # retroactive matches (B2)
+# confirm_match(a, b, actor, reason) -> {summary, revealed, purged, actor}
+#   ^ B4: now returns a dict (was a bare string). Raw contact surfaces here, then purges.
+# Plus setu.vault: get(vid, actor=, reason=), purge(vid, actor=), seed_vault(vault)
 ```
+B5 (`mesh.py`) and B3 (offline sync/merge) are still open; see the phases above.
 Consume A's `Record` (from `setu.ingest`) and `privacy` helpers; do not invent a
 parallel record shape.
 
