@@ -7,6 +7,13 @@ from __future__ import annotations
 import os
 from pathlib import Path
 
+# Load .env if present (keys, salt). Silent no-op if python-dotenv isn't installed.
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except Exception:  # pragma: no cover
+    pass
+
 # ----------------------------------------------------------------------------
 # Paths
 # ----------------------------------------------------------------------------
@@ -33,6 +40,22 @@ PII_SALT = os.environ.get("SETU_SALT", "dev-only-insecure-salt-change-me")
 # ----------------------------------------------------------------------------
 MODEL_DEFAULT = "claude-sonnet-4-6"   # structuring, cross-lingual desc match, explanations
 MODEL_HARD = "claude-opus-4-8"        # only for hard/ambiguous/dedup-tie cases
+
+# API keys (optional — the core runs fully offline without any of these)
+ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
+SARVAM_API_KEY = os.environ.get("SARVAM_API_KEY", "")
+
+# Common pivot language for cross-lingual matching at ingest.
+PIVOT_LANG = "en-IN"
+
+# Map our dataset language names -> Sarvam BCP-47-ish codes. Languages Sarvam
+# doesn't serve directly (Bhojpuri/Awadhi) fall back to Hindi for TTS/ASR hints.
+SARVAM_LANG_CODES = {
+    "Hindi": "hi-IN", "Bengali": "bn-IN", "Kannada": "kn-IN", "Maithili": "mai-IN",
+    "Gujarati": "gu-IN", "Telugu": "te-IN", "Tamil": "ta-IN", "Marathi": "mr-IN",
+    "Malayalam": "ml-IN", "Punjabi": "pa-IN", "Odia": "od-IN", "Urdu": "ur-IN",
+    "Bhojpuri": "hi-IN", "Awadhi": "hi-IN", "English": "en-IN",
+}
 
 # ----------------------------------------------------------------------------
 # Canonical CSV columns (verified against §3 of the spec)
