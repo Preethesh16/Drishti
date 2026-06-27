@@ -45,3 +45,30 @@ can work simultaneously, create per-person markdown docs, and push to GitHub.
 1. (User) drop the 5 CSVs + 4 KMLs into `data/`.
 2. (A) run `python -m setu.validate` on real data, tune `DUP_THRESHOLD`, tag `v0.1-number`.
 3. (B) `git checkout backend`, harden registry (B1). (C) `git checkout design`, build intake (C1).
+
+---
+
+## 2026-06-27 — Turn 2 — Voice (Sarvam) confirmed + built
+
+**Asked:** Confirmed Sarvam AI is best for voice. What should I do and what should
+the other contributors do?
+
+**Did:**
+- Researched the current Sarvam API/SDK (web) to build against real signatures, not
+  memory: `pip install sarvamai`; `SarvamAI(api_subscription_key=...)`;
+  `speech_to_text.transcribe` (saarika), `speech_to_text.translate` (auto-detect →
+  English), `text.translate` (mayura), `text_to_speech.convert` (bulbul).
+- Built `setu/voice.py` (Person A / `core`): transcribe, transcribe_to_english
+  (pivot-translate at ingest so the OFFLINE matcher is cross-lingual), translate,
+  speak, `containment_message` (stay-put TTS in the person's language),
+  `structure_report` (Claude → 16 fields). All degrade cleanly with no keys.
+- Added `setu/llm.py` shared Claude helper. Wired `.env` loading + key getters +
+  Sarvam language-code map into `config.py`. Added `sarvamai` to requirements.
+
+**Ran:** `python -m setu.voice` (no keys) → no crash; Hindi containment text renders;
+structuring/audio fall back to None as designed. All modules import OK.
+
+**Git:** committed on `core` → pushed; merged `core` → `main` (--no-ff) → pushed.
+
+**Next:** (A) wait for data → lock the number, then A3 Tier-2. (B) start B1 on
+`backend`. (C) start C1 on `design`. (User) drop data + get SARVAM/ANTHROPIC keys.

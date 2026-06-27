@@ -22,9 +22,12 @@
 
 ## Person A — Core / AI (`core`)
 - [x] A1 spine (above)
-- [ ] A2 lock the number (tune threshold on real data)
+- [x] `setu/llm.py` — shared Claude helper (have_claude/complete/complete_json)
+- [x] A4 `voice.py` — Sarvam ASR/TTS/translate + Claude structuring + containment
+      TTS; runs in fallback with no keys (merged to main). _Needs a SARVAM key +
+      real audio to fully exercise._
+- [ ] A2 lock the number (tune threshold on real data) ← **gated on data drop**
 - [ ] A3 `matcher_tier2.py` — Claude cross-lingual + reasons (degrade w/o key)
-- [ ] A4 `voice.py` — Sarvam/Vosk → Claude structure → fields + containment TTS
 
 ## Person B — Backend / DB / Sync (`backend`)
 - [x] `registry.py` working minimal base (SQLite, CRUD, confirm_match, seed_from_csv)

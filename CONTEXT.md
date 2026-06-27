@@ -89,9 +89,14 @@ fixture-proven) → **(real data → tag v0.1-number)** → 5 dashboard → 6 ti
 8 voice → 9 mesh. Cut-lines if short: mesh → drift → tier2 → maps. Never cut spine/number.
 
 ## CURRENT STATE (update every turn)
-- **Date:** 2026-06-27. Branch: `main` (scaffold committed). Remote: `Preethesh16/Drishti`.
+- **Date:** 2026-06-27. Branches on `Preethesh16/Drishti`: `main` (integration),
+  `core` (A), `backend` (B), `design` (C). Voice work merged core → main.
 - Spine built and proven on a synthetic fixture: Method A recall 100% / gap 15.6;
   Method B recall@1 90% / @3 100%. **Real number pending real data drop.**
+- Voice done (A4): `setu/voice.py` (Sarvam ASR/TTS/translate) + `setu/llm.py`
+  (shared Claude helper). Both degrade cleanly with no keys (verified, no crash).
 - Python 3.14.5, pandas 3.0.2 (rapidfuzz optional, has stdlib fallback).
-- **BLOCKER:** `data/` is empty — user must drop the 5 CSVs + 4 KMLs.
-- **Next:** real `validate` run + threshold tune (A); registry hardening (B); intake UI (C).
+- **BLOCKER:** `data/` is empty — user must drop the 5 CSVs + 4 KMLs. Optional keys:
+  `SARVAM_API_KEY` (voice), `ANTHROPIC_API_KEY` (Tier-2 + structuring) in `.env`.
+- **Next:** real `validate` run + threshold tune → tag v0.1-number, then A3 Tier-2
+  (A); registry hardening B1 (B); intake UI + branding C1 (C).
