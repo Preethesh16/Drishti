@@ -14,8 +14,8 @@ SDK: pip install sarvamai   (https://docs.sarvam.ai)
 """
 from __future__ import annotations
 
-from setu import config as C
-from setu import llm
+from drishti import config as C
+from drishti import llm
 
 _client = None
 

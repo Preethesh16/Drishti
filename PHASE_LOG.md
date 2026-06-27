@@ -1,4 +1,4 @@
-# PHASE LOG — Kumbh Setu (Drishti)
+# PHASE LOG — Drishti
 
 Append-only. Newest entries at the bottom.
 
@@ -17,11 +17,11 @@ can work simultaneously, create per-person markdown docs, and push to GitHub.
 - Corrected §3 assumption: there were **no** data files in the repo. Code is written to
   the documented 16-column schema and will run the instant the files are dropped in.
 - Wrote `.claude/settings.local.json` to allowlist tools (no more permission prompts).
-- Scaffolded: `data/ setu/ app/ scripts/ docs/ tests/`, `.gitignore`, `.env.example`,
-  `requirements.txt`, `setu/__init__.py`.
+- Scaffolded: `data/ drishti/ app/ scripts/ docs/ tests/`, `.gitignore`, `.env.example`,
+  `requirements.txt`, `drishti/__init__.py`.
 - Built the **spine**: `config.py`, `privacy.py`, `ingest.py`, `matcher_tier1.py`,
   `validate.py` (Method A + Method B).
-- Built working bases for teammates: `setu/registry.py` (Person B) and
+- Built working bases for teammates: `drishti/registry.py` (Person B) and
   `app/dashboard.py` (Person C, 6 tabs wired to live data).
 - Wrote docs: `README.md`, `data/README.md`, `docs/PERSON_A_CORE.md`,
   `docs/PERSON_B_BACKEND.md`, `docs/PERSON_C_DESIGN.md`, and the three tracking files.
@@ -43,7 +43,7 @@ can work simultaneously, create per-person markdown docs, and push to GitHub.
 
 **Next:**
 1. (User) drop the 5 CSVs + 4 KMLs into `data/`.
-2. (A) run `python -m setu.validate` on real data, tune `DUP_THRESHOLD`, tag `v0.1-number`.
+2. (A) run `python -m drishti.validate` on real data, tune `DUP_THRESHOLD`, tag `v0.1-number`.
 3. (B) `git checkout backend`, harden registry (B1). (C) `git checkout design`, build intake (C1).
 
 ---
@@ -58,14 +58,14 @@ the other contributors do?
   memory: `pip install sarvamai`; `SarvamAI(api_subscription_key=...)`;
   `speech_to_text.transcribe` (saarika), `speech_to_text.translate` (auto-detect →
   English), `text.translate` (mayura), `text_to_speech.convert` (bulbul).
-- Built `setu/voice.py` (Person A / `core`): transcribe, transcribe_to_english
+- Built `drishti/voice.py` (Person A / `core`): transcribe, transcribe_to_english
   (pivot-translate at ingest so the OFFLINE matcher is cross-lingual), translate,
   speak, `containment_message` (stay-put TTS in the person's language),
   `structure_report` (Claude → 16 fields). All degrade cleanly with no keys.
-- Added `setu/llm.py` shared Claude helper. Wired `.env` loading + key getters +
+- Added `drishti/llm.py` shared Claude helper. Wired `.env` loading + key getters +
   Sarvam language-code map into `config.py`. Added `sarvamai` to requirements.
 
-**Ran:** `python -m setu.voice` (no keys) → no crash; Hindi containment text renders;
+**Ran:** `python -m drishti.voice` (no keys) → no crash; Hindi containment text renders;
 structuring/audio fall back to None as designed. All modules import OK.
 
 **Git:** committed on `core` → pushed; merged `core` → `main` (--no-ff) → pushed.
@@ -87,9 +87,9 @@ spine on it.
 
 **Ran & result (STAND-IN data, NOT official):**
 - generate → 2,500 rows / 202 dupes.
-- `setu.ingest` → seeded 2500, 202 ground-truth dupes, 548 blank names, 449 open.
-- `setu.matcher_tier1` → top-3 with explainable per-signal reasons (sample top score 91.6).
-- `setu.validate` → Method A recall **100%** / gap **12.3** (flagged 84.4 vs non 72.1);
+- `drishti.ingest` → seeded 2500, 202 ground-truth dupes, 548 blank names, 449 open.
+- `drishti.matcher_tier1` → top-3 with explainable per-signal reasons (sample top score 91.6).
+- `drishti.validate` → Method A recall **100%** / gap **12.3** (flagged 84.4 vs non 72.1);
   Method B recall@1 **96.5%** / @3 **100%** / @5 **100%**.
 - 100% is expected on self-generated findable dupes — proves the PIPELINE, not difficulty.
   Real number awaits the official 202. Did NOT tag v0.1-number yet (hold for official data).

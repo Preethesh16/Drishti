@@ -13,19 +13,19 @@ from __future__ import annotations
 
 import streamlit as st
 
-st.set_page_config(page_title="Kumbh Setu", page_icon="🪔", layout="wide")
+st.set_page_config(page_title="Drishti", page_icon="🪔", layout="wide")
 
 # Lazy imports so the app still loads if optional deps/data are missing.
 def _load_records():
     try:
-        from setu.ingest import load_records
+        from drishti.ingest import load_records
         recs, _ = load_records()
         return recs, None
     except Exception as e:  # data not present yet
         return [], str(e)
 
 
-st.title("🪔 Kumbh Setu — reuniting the lost at Nashik Kumbh 2027")
+st.title("🪔 Drishti — reuniting the lost at Nashik Kumbh 2027")
 st.caption("We don't track people or scan faces. We connect the two halves of "
            "every search — the family looking and the person found — across "
            "centers that today can't see each other, in any language, on weak "
@@ -40,7 +40,7 @@ records, err = _load_records()
 with tab_file:
     st.header("Intake — voice-first, operator-mediated")
     st.info("PERSON C: build the two big forks (Lost / Found), voice button "
-            "(setu.voice), landmark location picker. Keep it brain-dead simple.")
+            "(drishti.voice), landmark location picker. Keep it brain-dead simple.")
     col1, col2 = st.columns(2)
     col1.button("🔍 Lost someone?", use_container_width=True)
     col2.button("🙋 Found someone?", use_container_width=True)
@@ -61,18 +61,18 @@ with tab_registry:
 
 with tab_matches:
     st.header("Matches — top-3 with explainable confidence")
-    st.info("PERSON C + A: pick a record, call setu.matcher_tier1.find_candidates, "
+    st.info("PERSON C + A: pick a record, call drishti.matcher_tier1.find_candidates, "
             "render score + per-signal reasons + the reveal-on-confirm button.")
 
 with tab_maps:
     st.header("Drift predictor & blind-spot map")
-    st.info("PERSON C: folium overlays from setu.geo / drift / blindspot (phase 6).")
+    st.info("PERSON C: folium overlays from drishti.geo / drift / blindspot (phase 6).")
 
 with tab_validation:
     st.header("THE NUMBER")
     if st.button("Run validation (offline)"):
         try:
-            from setu.validate import run
+            from drishti.validate import run
             with st.spinner("scoring…"):
                 res = run()
             st.json(res)

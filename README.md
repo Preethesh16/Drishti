@@ -1,4 +1,4 @@
-# 🪔 Kumbh Setu (Drishti)
+# 🪔 Drishti
 
 **Reuniting missing persons at the Nashik Kumbh Mela 2027 — without surveilling anyone.**
 
@@ -46,7 +46,7 @@ rows (Method A) and against **synthetic recovered pairs** (Method B), reporting 
 the discrimination gap. Almost no team brings a real metric — this is the differentiator.
 
 ```bash
-python -m setu.validate
+python -m drishti.validate
 ```
 
 ---
@@ -59,8 +59,8 @@ pip install -r requirements.txt
 cp .env.example .env            # fill SETU_SALT (+ optional ANTHROPIC_API_KEY / SARVAM_API_KEY)
 
 # Put the data files in data/  (see data/README — 5 CSVs + 4 KMLs)
-python -m setu.ingest          # -> "seeded 2500 records"
-python -m setu.validate        # -> THE NUMBER
+python -m drishti.ingest          # -> "seeded 2500 records"
+python -m drishti.validate        # -> THE NUMBER
 streamlit run app/dashboard.py # operator UI
 ```
 

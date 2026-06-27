@@ -1,8 +1,8 @@
-# PROGRESS — Kumbh Setu (Drishti)
+# PROGRESS — Drishti
 
 **Current phase:** Phase 1 — Spine scaffolded & proven on fixture.
 **Next checkpoint:** drop real `data/Synthetic_Missing_Persons_2500.csv` → run
-`python -m setu.validate` → tune `DUP_THRESHOLD` → tag `v0.1-number`.
+`python -m drishti.validate` → tune `DUP_THRESHOLD` → tag `v0.1-number`.
 
 > ✅ **Pipeline runs on STAND-IN data** (`python scripts/make_demo_data.py`).
 > ⚠️ Still need the **OFFICIAL** 5 CSVs + 4 KMLs for the real number + the maps.
@@ -11,12 +11,12 @@
 ---
 
 ## Spine (steps 1–4) — NEVER cut
-- [x] Scaffold: dirs, `.gitignore`, `.env.example`, `requirements.txt`, `setu/__init__.py`
-- [x] `setu/config.py` — weights, thresholds, age order, model ids, columns
-- [x] `setu/privacy.py` — hash_pii / mask / reveal+audit
-- [x] `setu/ingest.py` — real CSV parse, de-identify, `Record` dataclass
-- [x] `setu/matcher_tier1.py` — gate + weighted weak-signal score + top-k funnel
-- [x] `setu/validate.py` — Method A (real flag) + Method B (synthetic pairs)
+- [x] Scaffold: dirs, `.gitignore`, `.env.example`, `requirements.txt`, `drishti/__init__.py`
+- [x] `drishti/config.py` — weights, thresholds, age order, model ids, columns
+- [x] `drishti/privacy.py` — hash_pii / mask / reveal+audit
+- [x] `drishti/ingest.py` — real CSV parse, de-identify, `Record` dataclass
+- [x] `drishti/matcher_tier1.py` — gate + weighted weak-signal score + top-k funnel
+- [x] `drishti/validate.py` — Method A (real flag) + Method B (synthetic pairs)
 - [x] Spine smoke-tested on synthetic fixture (A recall 100%, B@1 90%)
 - [x] Full pipeline run on 2,500-row STAND-IN data (`scripts/make_demo_data.py`):
       Method A recall 100% / gap 12.3 · Method B recall@1 96.5% / @3 100%
@@ -25,7 +25,7 @@
 
 ## Person A — Core / AI (`core`)
 - [x] A1 spine (above)
-- [x] `setu/llm.py` — shared Claude helper (have_claude/complete/complete_json)
+- [x] `drishti/llm.py` — shared Claude helper (have_claude/complete/complete_json)
 - [x] A4 `voice.py` — Sarvam ASR/TTS/translate + Claude structuring + containment
       TTS; runs in fallback with no keys (merged to main). _Needs a SARVAM key +
       real audio to fully exercise._

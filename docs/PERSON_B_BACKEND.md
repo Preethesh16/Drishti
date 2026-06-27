@@ -4,7 +4,7 @@
 sync, and the mesh simulation. You make the data *live, shared, and safe*.
 
 **Branch:** `backend`  →  merge to `main` at every green checkpoint.
-**You own:** `setu/registry.py`, `setu/mesh.py`, the vault, the audit/reveal storage,
+**You own:** `drishti/registry.py`, `drishti/mesh.py`, the vault, the audit/reveal storage,
 and the thin API the dashboard calls.
 
 > Principle: the registry is **one shared, live, retroactive, time-windowed,
@@ -24,7 +24,7 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env        # set SETU_SALT (must match A's salt for hashes to line up)
 # drop data/Synthetic_Missing_Persons_2500.csv (see data/README.md)
-python -m setu.registry     # -> "registry seeded: 2500 records"
+python -m drishti.registry     # -> "registry seeded: 2500 records"
 ```
 
 ## Phases (each ends with a runnable checkpoint + commit)
@@ -40,7 +40,7 @@ python -m setu.registry     # -> "registry seeded: 2500 records"
 
 ### B2 — Retroactive re-match hook
 - When a **new report lands**, automatically run
-  `setu.matcher_tier1.find_candidates(new, get_records(open_only=True))` and store
+  `drishti.matcher_tier1.find_candidates(new, get_records(open_only=True))` and store
   surfaced candidates. A FOUND report stays open as "bait"; the moment the family
   files anywhere, the match fires **backward** and links them. This is the live +
   retroactive behaviour that is the actual product.
@@ -58,7 +58,7 @@ python -m setu.registry     # -> "registry seeded: 2500 records"
   ONLY here, with an audit line (who revealed what, when).
 - **Purge** raw PII from the vault post-reunion, keep the hash. Consent flag at intake.
 
-### B5 — Mesh simulation (`setu/mesh.py`) — SLIDE + SIM ONLY, do NOT build real BLE/DTN
+### B5 — Mesh simulation (`drishti/mesh.py`) — SLIDE + SIM ONLY, do NOT build real BLE/DTN
 - A small `MeshNode` demo: a FOUND report created offline on Node A hops
   A→B→C→online→Claude match→ack relays back. Show UUID dedup/merge between two
   offline nodes. **Resist writing real networking code — it's a time sink.**
@@ -73,14 +73,14 @@ python -m setu.registry     # -> "registry seeded: 2500 records"
 
 ## The contract you expose (keep stable — A and C depend on these)
 ```python
-from setu.registry import (
+from drishti.registry import (
     init_db, add_record, get_records, set_status, confirm_match, seed_from_csv,
 )
 # get_records(open_only=False, window_hours=None) -> list[Record]
 # add_record(Record) -> case_id
 # confirm_match(case_a, case_b, actor="operator") -> audit line
 ```
-Consume A's `Record` (from `setu.ingest`) and `privacy` helpers; do not invent a
+Consume A's `Record` (from `drishti.ingest`) and `privacy` helpers; do not invent a
 parallel record shape.
 
 ## Cut-lines

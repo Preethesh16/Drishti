@@ -10,7 +10,7 @@ import datetime as _dt
 import hashlib
 import hmac
 
-from setu.config import PII_SALT, AUDIT_LOG, UNKNOWN_TOKENS
+from drishti.config import PII_SALT, AUDIT_LOG, UNKNOWN_TOKENS
 
 
 def _norm(value: str | None) -> str:

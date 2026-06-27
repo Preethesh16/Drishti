@@ -12,7 +12,7 @@ Method B — synthetic pair recovery (clean ground truth):
   inject, then measure recall@1/@3/@5 — does the matcher rank the true source in
   top-k using ONLY de-identified weak signals.
 
-Run:  python -m setu.validate
+Run:  python -m drishti.validate
 """
 from __future__ import annotations
 
@@ -20,9 +20,9 @@ import random
 import statistics
 from dataclasses import replace
 
-from setu import config as C
-from setu.ingest import Record, load_records
-from setu.matcher_tier1 import find_candidates, score, gate
+from drishti import config as C
+from drishti.ingest import Record, load_records
+from drishti.matcher_tier1 import find_candidates, score, gate
 
 
 # ----------------------------------------------------------------------------

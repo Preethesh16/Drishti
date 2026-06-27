@@ -16,8 +16,8 @@ from __future__ import annotations
 import sqlite3
 import datetime as _dt
 
-from setu import config as C
-from setu.ingest import Record, OPEN_STATUSES
+from drishti import config as C
+from drishti.ingest import Record, OPEN_STATUSES
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS records (
@@ -112,14 +112,14 @@ def confirm_match(case_a, case_b, actor="operator", db_path=C.REGISTRY_DB) -> st
     Reveal-on-confirm of raw PII is done by the caller via privacy.reveal()."""
     set_status(case_a, "Reunited", db_path)
     set_status(case_b, "Reunited", db_path)
-    from setu.privacy import audit
+    from drishti.privacy import audit
     audit("CONFIRM_MATCH", case_a=case_a, case_b=case_b, actor=actor)
     return f"confirmed {case_a} <-> {case_b}"
 
 
 def seed_from_csv(db_path=C.REGISTRY_DB) -> int:
     """Load the 2,500 de-identified records into the registry."""
-    from setu.ingest import load_records
+    from drishti.ingest import load_records
     init_db(db_path)
     recs, _ = load_records()
     for r in recs:

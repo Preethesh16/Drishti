@@ -26,7 +26,7 @@ POLICE_CSV = DATA_DIR / "Police_Stations.csv"
 CHOKE_CSV = DATA_DIR / "Chokepoints_Parking.csv"
 
 REGISTRY_DB = ROOT / "registry.db"          # Person B: de-identified registry
-VAULT_DB = ROOT / "setu_vault.db"           # Person B: access-controlled raw PII (gitignored)
+VAULT_DB = ROOT / "drishti_vault.db"           # Person B: access-controlled raw PII (gitignored)
 AUDIT_LOG = ROOT / "audit.log"              # reveal-on-confirm audit trail
 
 # ----------------------------------------------------------------------------

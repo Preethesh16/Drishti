@@ -1,4 +1,4 @@
-"""Kumbh Setu (Drishti) — de-identified missing-person reunification registry.
+"""Drishti — de-identified missing-person reunification registry.
 
 A shared, live, de-identified registry that matches two reports about the same
 person (a family's "missing" + a volunteer's "found") on WEAK signals, across

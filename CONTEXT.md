@@ -1,7 +1,7 @@
-# CONTEXT — Kumbh Setu (Drishti) — read this file alone to continue with zero prior chat
+# CONTEXT — Drishti — read this file alone to continue with zero prior chat
 
 ## What we're building (one paragraph)
-**Kumbh Setu** ("Setu" = bridge) for the **Claude Impact Lab, Mumbai 2026** hackathon.
+**Drishti** ("Setu" = bridge) for the **Claude Impact Lab, Mumbai 2026** hackathon.
 Theme: reunite missing persons at the **Nashik Kumbh Mela 2027** while protecting PII.
 Real-world failure: ~10 lost-and-found centers are disconnected silos with no cross-search —
 a person *found* at Center B is invisible to a family *searching* at Center A. We build **one
@@ -46,7 +46,7 @@ retroactive, time-windowed, de-identified) → INTELLIGENCE [(A) Tier-1 offline 
 Claude cross-lingual match; (B) drift predictor from KML zone graph; (C) blind-spot map] →
 ACTION (targeted alert → nearest help → human confirms → reunite). PRIVACY CORE cross-cuts.
 
-## Scoring config (`setu/config.py`, all tunable)
+## Scoring config (`drishti/config.py`, all tunable)
 `lang=30, age=15 (adjacent=7), gender=10 (Unknown=5), geo_same=25 / geo_diff=4,
 desc=35×similarity, state=10, district=5`. `MAX_RAW=130` (raw→0..100). Gate: not-same-record,
 age within ±1 band, gender equal-or-Unknown. `DUP_THRESHOLD=55` (tune vs the 202).
@@ -56,11 +56,11 @@ Age order: `['0-12','13-17','18-40','41-60','61-70','71-80','80+']`.
 ```
 Drishti/
 ├── data/ (README; DROP the 5 CSVs + 4 KMLs here — currently EMPTY)
-├── setu/ __init__ · config · privacy · ingest · matcher_tier1 · validate · registry
+├── drishti/ __init__ · config · privacy · ingest · matcher_tier1 · validate · registry
 ├── app/dashboard.py (Streamlit, 6 tabs)
 ├── docs/ PERSON_A_CORE.md · PERSON_B_BACKEND.md · PERSON_C_DESIGN.md
 ├── PROGRESS.md · PHASE_LOG.md · CONTEXT.md · README.md · requirements.txt
-└── (todo) setu/matcher_tier2 · voice · geo · drift · blindspot · mesh · scripts/build_geo
+└── (todo) drishti/matcher_tier2 · voice · geo · drift · blindspot · mesh · scripts/build_geo
 ```
 
 ## Team split (parallel branches → merge to main at green checkpoints)
@@ -69,13 +69,13 @@ Drishti/
 - **C = Design/Frontend/Maps** (`design`): dashboard, geo, drift, blindspot, branding, demo.
 See `docs/PERSON_*.md`. Stable contracts:
 ```python
-setu.ingest:        Record, load_records()  -> (records, vault)
-setu.matcher_tier1: find_candidates(target, pool, top_k=3, require_open=False) -> [ScoreResult]
+drishti.ingest:        Record, load_records()  -> (records, vault)
+drishti.matcher_tier1: find_candidates(target, pool, top_k=3, require_open=False) -> [ScoreResult]
                     ScoreResult(.case_id, .score 0..100, .raw, .reasons dict)
-setu.registry:      init_db, add_record, get_records(open_only, window_hours), set_status,
+drishti.registry:      init_db, add_record, get_records(open_only, window_hours), set_status,
                     confirm_match(a, b, actor), seed_from_csv
-setu.privacy:       hash_pii, mask_name, mask_mobile, reveal(case_id, fields, actor, reason), audit
-setu.validate:      run() -> {method_a, method_b}
+drishti.privacy:       hash_pii, mask_name, mask_mobile, reveal(case_id, fields, actor, reason), audit
+drishti.validate:      run() -> {method_a, method_b}
 ```
 
 ## Tech (all free, offline-capable core)
@@ -93,7 +93,7 @@ fixture-proven) → **(real data → tag v0.1-number)** → 5 dashboard → 6 ti
   `core` (A), `backend` (B), `design` (C). Voice work merged core → main.
 - Spine built and proven on a synthetic fixture: Method A recall 100% / gap 15.6;
   Method B recall@1 90% / @3 100%. **Real number pending real data drop.**
-- Voice done (A4): `setu/voice.py` (Sarvam ASR/TTS/translate) + `setu/llm.py`
+- Voice done (A4): `drishti/voice.py` (Sarvam ASR/TTS/translate) + `drishti/llm.py`
   (shared Claude helper). Both degrade cleanly with no keys (verified, no crash).
 - Python 3.14.5, pandas 3.0.2 (rapidfuzz optional, has stdlib fallback).
 - **Pipeline runs end-to-end on STAND-IN data** (`python scripts/make_demo_data.py`
