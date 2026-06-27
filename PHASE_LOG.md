@@ -38,8 +38,10 @@ can work simultaneously, create per-person markdown docs, and push to GitHub.
 - Method B: recall@1 **90%**, @3 **100%**, @5 **100%**.
 - Proves the pipeline is correct. The meaningful number comes from the real 2,500 file.
 
+**Pushed:** commit `d4e1ebc` → `origin/main`; created + pushed `core`, `backend`,
+`design` branches. All four branches live on `github.com:Preethesh16/Drishti`.
+
 **Next:**
 1. (User) drop the 5 CSVs + 4 KMLs into `data/`.
 2. (A) run `python -m setu.validate` on real data, tune `DUP_THRESHOLD`, tag `v0.1-number`.
 3. (B) `git checkout backend`, harden registry (B1). (C) `git checkout design`, build intake (C1).
-4. Push scaffold to `origin/main`; create `core` / `backend` / `design` branches.

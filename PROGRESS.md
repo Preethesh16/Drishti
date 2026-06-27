@@ -42,6 +42,10 @@
 - [ ] C3 `geo.py` / `blindspot.py` / `drift.py` + Maps tab (folium)
 - [ ] C4 Validation tab polish + demo script
 
+## Git / GitHub
+- [x] committed scaffold → `origin/main` (`d4e1ebc`)
+- [x] created + pushed branches `core`, `backend`, `design`
+
 ## Tracking (every turn)
 - [x] PROGRESS.md · PHASE_LOG.md · CONTEXT.md · README.md · per-person docs
 
