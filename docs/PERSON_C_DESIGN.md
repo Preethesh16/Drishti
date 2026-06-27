@@ -80,6 +80,11 @@ from drishti.validate import run
 maps (C3) is cut before the spine. **Never cut** the Matches tab (C2) or the
 Validation tab (C4) — those carry the demo. Voice button + reveal-on-confirm are gold.
 
+## Status (C1 ✅)
+Landing page integrated into `app/dashboard.py`. Full-page hero, problem, features,
+proof, CTA sections shown first. `?navigate=app` query param routes CTAs into the
+operator dashboard (File tab). `sys.path` fix ensures `drishti` imports cleanly.
+
 ## Definition of done per turn
 Run `streamlit run app/dashboard.py`, click through, fix, commit. Update
 `PROGRESS.md`, `PHASE_LOG.md`, `CONTEXT.md` every turn.
