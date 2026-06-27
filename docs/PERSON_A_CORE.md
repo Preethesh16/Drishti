@@ -4,8 +4,8 @@
 This is the spine and the moat. If everything else dies, A still demos a real number.
 
 **Branch:** `core`  →  merge to `main` at every green checkpoint.
-**You own:** `setu/config.py`, `setu/privacy.py`, `setu/ingest.py`, `setu/matcher_tier1.py`,
-`setu/validate.py`, `setu/matcher_tier2.py`, `setu/voice.py`.
+**You own:** `drishti/config.py`, `drishti/privacy.py`, `drishti/ingest.py`, `drishti/matcher_tier1.py`,
+`drishti/validate.py`, `drishti/matcher_tier2.py`, `drishti/voice.py`.
 
 > Principle: **match on weak signals, not identifiers** (name/mobile stay hashed).
 > Claude is the brain; everything else is plumbing. The core MUST run offline.
@@ -19,7 +19,7 @@ python3 -m venv .venv && source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env        # set SETU_SALT now; ANTHROPIC_API_KEY later
 # drop data/Synthetic_Missing_Persons_2500.csv (see data/README.md)
-python -m setu.validate     # this is your heartbeat
+python -m drishti.validate     # this is your heartbeat
 ```
 
 ## Phases
@@ -30,7 +30,7 @@ fixture: Method A recall 100%, Method B recall@1 90%. **Now run it on the REAL
 2,500-row file** and read the actual number.
 
 ### A2 — Lock the number 🎯 (NEXT — do this the moment data lands)
-- Run `python -m setu.validate` on the real file.
+- Run `python -m drishti.validate` on the real file.
 - **Tune `DUP_THRESHOLD` in `config.py`** against the 202 flagged rows: maximise
   recall while keeping the discrimination gap wide. Sweep 45→70, pick the knee.
 - Lead with **recall + gap** (naive precision misleads — names collide by chance).
@@ -46,7 +46,7 @@ fixture: Method A recall 100%, Method B recall@1 90%. **Now run it on the REAL
 - Use the Anthropic Python SDK (`anthropic` in requirements). Pivot-translate at
   ingest if Sarvam available so even the OFFLINE matcher is cross-lingual.
 
-### A4 — Voice (`setu/voice.py`)
+### A4 — Voice (`drishti/voice.py`)
 - Sarvam AI (if `SARVAM_API_KEY`) → ASR + translate + TTS for Indian languages.
 - Operator speaks the family's report → transcribe → **Claude structures into the
   16 fields** → preview for the operator. Never force a form on a non-literate user.
@@ -56,12 +56,12 @@ fixture: Method A recall 100%, Method B recall@1 90%. **Now run it on the REAL
 
 ## The contract you expose (keep these stable — B and C depend on them)
 ```python
-from setu.ingest import Record, load_records          # de-identified record + loader
-from setu.matcher_tier1 import find_candidates, score # find_candidates(target, pool,
+from drishti.ingest import Record, load_records          # de-identified record + loader
+from drishti.matcher_tier1 import find_candidates, score # find_candidates(target, pool,
                                                        #   top_k=3, require_open=False)
                                                        #   -> list[ScoreResult]
 # ScoreResult: .case_id  .score (0..100)  .raw  .reasons (dict signal->points)
-from setu.privacy import hash_pii, mask_name, mask_mobile, reveal, audit
+from drishti.privacy import hash_pii, mask_name, mask_mobile, reveal, audit
 ```
 
 ## Cut-lines (cut in THIS order, never the spine/number)

@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 
-from setu import config as C
+from drishti import config as C
 
 _client = None
 

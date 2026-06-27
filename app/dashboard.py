@@ -2,7 +2,7 @@
 
 Tabs: File · Registry · Matches · Maps · Validation · (Mesh)
 Now connected to the LIVE backend: every tab reads/writes the shared registry.db
-+ access-controlled setu_vault.db through `setu.api` — no CSV, no direct SQLite.
++ access-controlled setu_vault.db through `drishti.api` — no CSV, no direct SQLite.
 On first launch it auto-seeds (real CSV if present in data/, else a small demo set),
 so the DB connection works the instant you run it. Run:  streamlit run app/dashboard.py
 
@@ -19,7 +19,7 @@ st.set_page_config(page_title="Kumbh Setu", page_icon="🪔", layout="wide")
 
 # The thin backend door (Person B). Lazy so the app still loads if deps are missing.
 def _api():
-    from setu import api
+    from drishti import api
     return api
 
 
@@ -65,8 +65,8 @@ tab_file, tab_registry, tab_matches, tab_maps, tab_validation, tab_mesh = st.tab
 with tab_file:
     st.header("Intake — voice-first, operator-mediated")
     st.info("PERSON C: build the two big forks (Lost / Found), voice button "
-            "(setu.voice), landmark location picker. Keep it brain-dead simple. "
-            "On submit, call setu.api.file_report(record) — it persists to the "
+            "(drishti.voice), landmark location picker. Keep it brain-dead simple. "
+            "On submit, call drishti.api.file_report(record) — it persists to the "
             "vault + registry and fires the retroactive match automatically.")
     col1, col2 = st.columns(2)
     col1.button("🔍 Lost someone?", use_container_width=True)
@@ -147,14 +147,14 @@ with tab_matches:
 # ---------------------------------------------------------------- Maps
 with tab_maps:
     st.header("Drift predictor & blind-spot map")
-    st.info("PERSON C: folium overlays from setu.geo / drift / blindspot (phase 6).")
+    st.info("PERSON C: folium overlays from drishti.geo / drift / blindspot (phase 6).")
 
 # ---------------------------------------------------------------- Validation
 with tab_validation:
     st.header("THE NUMBER")
     if st.button("Run validation (offline)"):
         try:
-            from setu.validate import run
+            from drishti.validate import run
             with st.spinner("scoring…"):
                 res = run()
             st.json(res)

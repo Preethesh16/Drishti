@@ -26,7 +26,7 @@ POLICE_CSV = DATA_DIR / "Police_Stations.csv"
 CHOKE_CSV = DATA_DIR / "Chokepoints_Parking.csv"
 
 REGISTRY_DB = ROOT / "registry.db"          # Person B: de-identified registry
-VAULT_DB = ROOT / "setu_vault.db"           # Person B: access-controlled raw PII (gitignored)
+VAULT_DB = ROOT / "drishti_vault.db"           # Person B: access-controlled raw PII (gitignored)
 AUDIT_LOG = ROOT / "audit.log"              # reveal-on-confirm audit trail
 
 # ----------------------------------------------------------------------------
@@ -88,6 +88,13 @@ MAX_RAW = W_LANG + W_AGE_SAME + W_GENDER + W_GEO_SAME + W_DESC + W_STATE + W_DIS
 AGE_BAND_GATE = 1          # candidates must be within ±1 age band
 DUP_THRESHOLD = 55         # normalised score >= this => "same person" (tune vs the 202)
 TIME_WINDOW_HOURS = 72     # only match within a plausible time window (registry use)
+
+# Match decision bands on the normalised 0..100 score (Step 5 of the workflow).
+# "auto"   -> auto-ALERT a human/volunteer (NEVER auto-reunite — principle 6)
+# "review" -> queue for human review
+# below    -> no match yet
+MATCH_AUTO = 70
+MATCH_REVIEW = 40
 
 # ----------------------------------------------------------------------------
 # Age bands, ordered youngest -> oldest (adjacency = |index diff| == 1)

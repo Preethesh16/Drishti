@@ -3,7 +3,7 @@
 One shared, live, time-windowed, retroactive, DE-IDENTIFIED pool backed by
 SQLite with offline/sync fields. The `records` table holds ONLY hashes +
 de-identified attributes; raw name/mobile live in the separate access-controlled
-`setu.vault` (see vault.py). A (matcher) and C (dashboard) call these functions.
+`drishti.vault` (see vault.py). A (matcher) and C (dashboard) call these functions.
 
 Contract used by the rest of the system (keep these signatures stable):
     init_db()
@@ -20,8 +20,8 @@ import datetime as _dt
 import json
 import sqlite3
 
-from setu import config as C
-from setu.ingest import Record, OPEN_STATUSES
+from drishti import config as C
+from drishti.ingest import Record, OPEN_STATUSES
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS records (
@@ -110,7 +110,7 @@ def rematch_record(record: Record, db_path=C.REGISTRY_DB, top_k: int = 3) -> lis
     sitting open as bait gets linked the moment the family files anywhere.
     Returns the stored candidate dicts (also used by the dashboard)."""
     # local import: keeps seeding light and avoids any import-time matcher cost
-    from setu.matcher_tier1 import find_candidates
+    from drishti.matcher_tier1 import find_candidates
 
     pool = get_records(open_only=True, window_hours=C.TIME_WINDOW_HOURS,
                        reference_time=record.reported_at, db_path=db_path)
@@ -253,8 +253,8 @@ def confirm_match(case_a, case_b, actor="operator",
     NOTE: return shape changed from a bare string to a dict (B4) — A/C consume
     the dict; see CONTEXT.md.
     """
-    from setu import vault as vaultmod
-    from setu.privacy import audit
+    from drishti import vault as vaultmod
+    from drishti.privacy import audit
 
     set_status(case_a, "Reunited", db_path)
     set_status(case_b, "Reunited", db_path)
@@ -286,8 +286,8 @@ def confirm_match(case_a, case_b, actor="operator",
 def seed_from_csv(db_path=C.REGISTRY_DB, vault_path=C.VAULT_DB) -> int:
     """Load the de-identified records into the registry AND the raw PII into the
     separate access-controlled vault (B1 — the two stores never co-mingle)."""
-    from setu.ingest import load_records
-    from setu import vault as vaultmod
+    from drishti.ingest import load_records
+    from drishti import vault as vaultmod
 
     init_db(db_path)
     recs, vault = load_records()
@@ -298,7 +298,7 @@ def seed_from_csv(db_path=C.REGISTRY_DB, vault_path=C.VAULT_DB) -> int:
 
 
 if __name__ == "__main__":
-    from setu import vault as vaultmod
+    from drishti import vault as vaultmod
     n = seed_from_csv()
     live, purged = vaultmod.count()
     print(f"registry seeded: {n} records into {C.REGISTRY_DB.name}")

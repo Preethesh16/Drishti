@@ -22,8 +22,8 @@ import datetime as _dt
 import os
 import sqlite3
 
-from setu import config as C
-from setu import privacy
+from drishti import config as C
+from drishti import privacy
 
 SCHEMA = """
 CREATE TABLE IF NOT EXISTS vault (
@@ -74,7 +74,7 @@ def put(vault_id: str, name: str | None, mobile: str | None,
 
 
 def seed_vault(vault: dict[str, dict], db_path=C.VAULT_DB) -> int:
-    """Bulk-load the vault dict that `setu.ingest.load_records()` returns."""
+    """Bulk-load the vault dict that `drishti.ingest.load_records()` returns."""
     init_vault(db_path)
     n = 0
     with _conn(db_path) as conn:

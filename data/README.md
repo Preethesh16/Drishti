@@ -24,11 +24,11 @@ language, last_seen_location, reporting_center, reporter_mobile,
 physical_description, status, resolution_hours, is_duplicate_report, remarks
 ```
 `is_duplicate_report == True` (~202 rows) is the **ground-truth label** for matching.
-Parse with a real CSV reader (physical_description embeds quoted commas) — `setu/ingest.py`
+Parse with a real CSV reader (physical_description embeds quoted commas) — `drishti/ingest.py`
 already does this.
 
 Once the files are here:
 ```bash
-python -m setu.ingest      # -> seeded 2500
-python -m setu.validate    # -> recall + gap
+python -m drishti.ingest      # -> seeded 2500
+python -m drishti.validate    # -> recall + gap
 ```

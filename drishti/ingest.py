@@ -1,7 +1,7 @@
 """Load the 2,500 missing-person rows with a REAL CSV parser, de-identify them
 (hash name + mobile), and emit canonical `Record` objects the matcher consumes.
 
-Run directly:  python -m setu.ingest
+Run directly:  python -m drishti.ingest
 """
 from __future__ import annotations
 
@@ -9,8 +9,8 @@ from dataclasses import dataclass, field
 
 import pandas as pd
 
-from setu import privacy
-from setu.config import MISSING_CSV, MISSING_COLUMNS
+from drishti import privacy
+from drishti.config import MISSING_CSV, MISSING_COLUMNS
 
 
 # Open statuses still in play for matching (closed = Reunited, terminal).

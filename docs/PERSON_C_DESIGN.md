@@ -4,7 +4,7 @@
 the maps, the branding, and the demo polish. You turn the engine into a story.
 
 **Branch:** `design`  →  merge to `main` at every green checkpoint.
-**You own:** `app/dashboard.py`, `setu/geo.py`, `setu/drift.py`, `setu/blindspot.py`,
+**You own:** `app/dashboard.py`, `drishti/geo.py`, `drishti/drift.py`, `drishti/blindspot.py`,
 `scripts/build_geo.py`, branding/assets, and the demo script.
 
 > Design north star: a panicking, **non-literate** reporter is served by a
@@ -33,7 +33,7 @@ streamlit run app/dashboard.py
 ### C1 — Intake + branding 🎯 (NEXT)
 - The **File** tab: the two big forks. Lost-flow stays brain-dead simple; Found-flow
   lets the operator log details. Big buttons, minimal text, language picker.
-- Brand it "Kumbh Setu" (Setu = bridge). Warm, calm, trustworthy. The one-liner from
+- Brand it "Drishti" (Setu = bridge). Warm, calm, trustworthy. The one-liner from
   the README goes on the header. Add the "what we do NOT do" honesty line somewhere
   visible — it reads as senior.
 
@@ -41,36 +41,39 @@ streamlit run app/dashboard.py
 - **Registry** tab: show the merged pool with center + status; visibly demonstrate
   that a record from Center B is now visible to Center A (the silo break).
 - **Matches** tab: pick a record → call
-  `setu.matcher_tier1.find_candidates(target, pool, top_k=3)` → render each candidate
+  `drishti.matcher_tier1.find_candidates(target, pool, top_k=3)` → render each candidate
   with its **score (0–100)** and **per-signal reasons** (`r.reasons` dict). Mask PII
-  with `setu.privacy.mask_name / mask_mobile`. Add a **"Confirm reunion"** button that
+  with `drishti.privacy.mask_name / mask_mobile`. Add a **"Confirm reunion"** button that
   calls `registry.confirm_match` and triggers `privacy.reveal` — the privacy money shot.
 
 ### C3 — Maps (`geo.py` / `blindspot.py` / `drift.py`) + Maps tab
 - `scripts/build_geo.py`: parse the KMLs with `lxml` → polygons/lines → GeoJSON.
-  `setu/geo.py`: `which_zone(lat,lng)` via `shapely` point-in-polygon; build the
+  `drishti/geo.py`: `which_zone(lat,lng)` via `shapely` point-in-polygon; build the
   zone graph (nodes = zone polygons, edges = corridors/chokepoints).
-- `setu/blindspot.py`: overlay CCTV coverage vs separation hotspots (chokepoints +
+- `drishti/blindspot.py`: overlay CCTV coverage vs separation hotspots (chokepoints +
   `last_seen_location` clusters). **High-separation × low-camera = where people vanish.**
-- `setu/drift.py`: `P(zone | last_seen, elapsed, profile)` bounded by walking speed
+- `drishti/drift.py`: `P(zone | last_seen, elapsed, profile)` bounded by walking speed
   (~1–2 km/h); behavioural priors (confused elderly = low-mobility/anchor-seeking;
   children = erratic short-range; adults = head for exits).
 - **Maps** tab: `folium` + `streamlit-folium` heatmaps. Bounds:
   lat 19.93–20.08, lng 73.71–73.89.
 
 ### C4 — Validation tab + demo polish
-- **Validation** tab already calls `setu.validate.run()` — make the number BIG and
+- **Validation** tab already calls `drishti.validate.run()` — make the number BIG and
   proud (recall + gap, recall@1/@3/@5). This is the differentiator; give it the stage.
 - Write/own the 3-minute demo script: silos → file a report by voice → instant
   cross-lingual match with reason → confirm → reveal → "and here's the number".
 
 ## The contract you consume (don't reach past these)
 ```python
-from setu.ingest import load_records, Record
-from setu.matcher_tier1 import find_candidates          # -> list[ScoreResult]
-from setu.registry import get_records, confirm_match
-from setu.privacy import mask_name, mask_mobile, reveal
-from setu.validate import run
+from drishti.ingest import load_records, Record
+from drishti.matcher_tier2 import match     # PREFERRED for the Matches tab:
+#   match(target, pool, top_k=3) -> [EnrichedResult(.case_id, .score, .band, .reason, .tier2_used)]
+#   .band is 'auto' (≥70, green) | 'review' (≥40, amber) | 'none' — colour the cards by band.
+from drishti.matcher_tier1 import find_candidates          # raw Tier-1 if you need it
+from drishti.registry import get_records, confirm_match
+from drishti.privacy import mask_name, mask_mobile, reveal
+from drishti.validate import run
 ```
 
 ## Cut-lines

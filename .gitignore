@@ -2,7 +2,7 @@
 .env
 *.key
 secrets/
-setu_vault.db
+drishti_vault.db
 *_vault.*
 
 # Python

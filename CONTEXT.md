@@ -1,7 +1,7 @@
-# CONTEXT — Kumbh Setu (Drishti) — read this file alone to continue with zero prior chat
+# CONTEXT — Drishti — read this file alone to continue with zero prior chat
 
 ## What we're building (one paragraph)
-**Kumbh Setu** ("Setu" = bridge) for the **Claude Impact Lab, Mumbai 2026** hackathon.
+**Drishti** ("Setu" = bridge) for the **Claude Impact Lab, Mumbai 2026** hackathon.
 Theme: reunite missing persons at the **Nashik Kumbh Mela 2027** while protecting PII.
 Real-world failure: ~10 lost-and-found centers are disconnected silos with no cross-search —
 a person *found* at Center B is invisible to a family *searching* at Center A. We build **one
@@ -46,7 +46,7 @@ retroactive, time-windowed, de-identified) → INTELLIGENCE [(A) Tier-1 offline 
 Claude cross-lingual match; (B) drift predictor from KML zone graph; (C) blind-spot map] →
 ACTION (targeted alert → nearest help → human confirms → reunite). PRIVACY CORE cross-cuts.
 
-## Scoring config (`setu/config.py`, all tunable)
+## Scoring config (`drishti/config.py`, all tunable)
 `lang=30, age=15 (adjacent=7), gender=10 (Unknown=5), geo_same=25 / geo_diff=4,
 desc=35×similarity, state=10, district=5`. `MAX_RAW=130` (raw→0..100). Gate: not-same-record,
 age within ±1 band, gender equal-or-Unknown. `DUP_THRESHOLD=55` (tune vs the 202).
@@ -55,14 +55,14 @@ Age order: `['0-12','13-17','18-40','41-60','61-70','71-80','80+']`.
 ## Repo layout (current)
 ```
 Drishti/
-├── data/ (README; DROP the 5 CSVs + 4 KMLs here — currently EMPTY)
-├── setu/ __init__ · config · privacy · ingest · matcher_tier1 · validate · registry ·
-│        vault (B1) · api (B facade) · llm · voice
-├── app/dashboard.py (Streamlit, 6 tabs — now wired to the live DB via setu.api)
+├── data/ (README; stand-in CSV present; DROP official 5 CSVs + 4 KMLs here)
+├── drishti/ __init__ · config · privacy · ingest · matcher_tier1 · matcher_tier2 · validate
+│            · registry · vault (B1) · api (B facade) · llm · voice
+├── app/dashboard.py (Streamlit, 6 tabs — wired to live DB via drishti.api) · scripts/make_demo_data.py
 ├── scripts/demo_backend.py (B1/B2/B4 verification — runs with no data, no keys)
 ├── docs/ PERSON_A_CORE.md · PERSON_B_BACKEND.md · PERSON_C_DESIGN.md
 ├── PROGRESS.md · PHASE_LOG.md · CONTEXT.md · README.md · requirements.txt
-└── (todo) setu/matcher_tier2 · mesh (B5) · geo · drift · blindspot · scripts/build_geo
+└── (todo) drishti/geo · drift · blindspot · mesh (B5) · scripts/build_geo
 ```
 
 ## Team split (parallel branches → merge to main at green checkpoints)
@@ -71,21 +71,24 @@ Drishti/
 - **C = Design/Frontend/Maps** (`design`): dashboard, geo, drift, blindspot, branding, demo.
 See `docs/PERSON_*.md`. Stable contracts:
 ```python
-setu.ingest:        Record, load_records()  -> (records, vault)
-setu.matcher_tier1: find_candidates(target, pool, top_k=3, require_open=False) -> [ScoreResult]
+drishti.ingest:        Record, load_records()  -> (records, vault)
+drishti.matcher_tier1: find_candidates(target, pool, top_k=3, require_open=False) -> [ScoreResult]
                     ScoreResult(.case_id, .score 0..100, .raw, .reasons dict)
-setu.registry:      init_db, add_record(rec, rematch=True), set_status, seed_from_csv,
+drishti.matcher_tier2: match(target, pool, top_k=3, tier2_k=5, require_open=False) -> [EnrichedResult]
+                    EnrichedResult(.case_id, .score, .band 'auto'|'review'|'none', .reason, .tier2_used)
+                    band thresholds: MATCH_AUTO=70 (alert human, not auto-reunite), MATCH_REVIEW=40
+drishti.registry:   init_db, add_record(rec, rematch=True), set_status, seed_from_csv,
                     get_records(open_only=False, window_hours=None, reference_time=None),
                     get_candidates(case_id) -> [dict],     # B2 retroactive matches
                     confirm_match(a, b, actor, reason) -> {summary, revealed, purged, actor}
                     # ^ B4: now returns a dict (was a string); raw contact + purge happen here
-setu.vault:         init_vault, put, seed_vault(vault), get(vid, actor=, reason=) -> {} | raw,
+drishti.vault:      init_vault, put, seed_vault(vault), get(vid, actor=, reason=) -> {} | raw,
                     purge(vid, actor=), count() -> (live, purged)   # access-controlled raw PII
-setu.api:           ensure_seeded(), stats(), list_records(open_only, limit), get_record(id),
+drishti.api:        ensure_seeded(), stats(), list_records(open_only, limit), get_record(id),
                     find_matches(id, top_k) -> [dict], candidates(id), file_report(rec),
                     confirm(a, b, actor, reason)   # THE door the dashboard calls (B's facade)
-setu.privacy:       hash_pii, mask_name, mask_mobile, reveal(case_id, fields, actor, reason), audit
-setu.validate:      run() -> {method_a, method_b}
+drishti.privacy:    hash_pii, mask_name, mask_mobile, reveal(case_id, fields, actor, reason), audit
+drishti.validate:   run() -> {method_a, method_b}
 ```
 
 ## Tech (all free, offline-capable core)
@@ -99,28 +102,27 @@ fixture-proven) → **(real data → tag v0.1-number)** → 5 dashboard → 6 ti
 8 voice → 9 mesh. Cut-lines if short: mesh → drift → tier2 → maps. Never cut spine/number.
 
 ## CURRENT STATE (update every turn)
-- **Date:** 2026-06-27. Branches on `Preethesh16/Drishti`: `main` (integration),
-  `core` (A), `backend` (B), `design` (C). Voice work merged core → main.
-- Spine built and proven on a synthetic fixture: Method A recall 100% / gap 15.6;
-  Method B recall@1 90% / @3 100%. **Real number pending real data drop.**
-- Voice done (A4): `setu/voice.py` (Sarvam ASR/TTS/translate) + `setu/llm.py`
-  (shared Claude helper). Both degrade cleanly with no keys (verified, no crash).
-- **Backend B1+B2+B4 done on `backend`** (merging into main): `setu/vault.py` separates raw
-  PII into an access-controlled `setu_vault.db`; `get_records` has a time-window filter;
+- **Date:** 2026-06-27. Name = **Drishti** (was codename "Kumbh Setu"). Branches on
+  `Preethesh16/Drishti`: `main` (integration), `core` (A), `backend` (B), `design` (C).
+- **Done so far:** spine (config/privacy/ingest/matcher_tier1/validate); `llm.py`;
+  `voice.py` (A4 Sarvam); **`matcher_tier2.py` (A3 Claude cross-lingual + bands)**;
+  registry base; dashboard skeleton; stand-in data generator. All fallback-safe.
+- **Backend B1+B2+B4 done on `backend`** (this merge): `drishti/vault.py` separates raw PII
+  into an access-controlled `drishti_vault.db`; `get_records` has a time-window filter;
   `add_record` fires a retroactive re-match (new `candidates` table + `get_candidates`);
   `confirm_match` does reveal-on-confirm → audit → purge and returns a dict. Proven by
   `scripts/demo_backend.py` (no data, no keys → ALL CHECKS PASSED).
-- **DB connected to the app** via `setu/api.py` (B's thin facade): the dashboard now
-  reads/writes registry.db + setu_vault.db through the API (no CSV, no direct SQLite).
-  `api.ensure_seeded()` seeds from the stand-in CSV if present, else a 9-record demo set, so
-  the connection works with no data drop. registry.db is 0644; setu_vault.db is 0600.
-- **Pipeline runs end-to-end on STAND-IN data** (`python scripts/make_demo_data.py`
-  → `data/Synthetic_Missing_Persons_2500.csv`, 2500 rows / 202 dupes): Method A recall
-  100% / gap 12.3; Method B recall@1 96.5%. (100% expected on self-made dupes — proves
-  the pipeline. Real number awaits official 202; not yet tagged v0.1-number.)
+- **DB connected to the app** via `drishti/api.py` (B's thin facade): the dashboard now
+  reads/writes registry.db + drishti_vault.db through the API (no CSV, no direct SQLite).
+  `api.ensure_seeded()` seeds from the CSV if present, else a 9-record demo set.
+- **Connectivity model (decided):** LAN→central (normal) → booth↔booth P2P (only on
+  LAN loss) → local queue → SMS. Booth is STAFFED (operator-mediated). [B to build]
+- **Match bands:** auto≥70 (alert a human, never auto-reunite), review≥40, else none.
+- **Pipeline green on STAND-IN data** (`python scripts/make_demo_data.py`): Method A
+  recall 100% / gap 12.3; Method B recall@1 ~97%. (100% expected on self-made dupes —
+  proves the pipeline; real number awaits official 202; not yet tagged v0.1-number.)
 - Python 3.10–3.14 across dev machines (pandas 2.x/3.x; rapidfuzz optional, stdlib Jaccard fallback).
-- **Still need:** the OFFICIAL 5 CSVs + 4 KMLs (real number + maps). Optional keys:
+- **Still need:** OFFICIAL 5 CSVs + 4 KMLs (real number + maps). Optional keys:
   `SARVAM_API_KEY` (voice), `ANTHROPIC_API_KEY` (Tier-2 + structuring) in `.env`.
-  (Backend logic is data-independent; only the real seed counts + the number wait on data.)
-- **Next:** real `validate` run + threshold tune → tag v0.1-number, then A3 Tier-2
-  (A); B3 sync/merge + B5 mesh, then merge `backend`→`main` (B); intake UI + branding C1 (C).
+- **Next:** A — lock the number when data lands. B — B3 sync/merge + B5 mesh, then merge
+  `backend`→`main`. C — C1 intake + Matches tab via `matcher_tier2.match()` + maps.

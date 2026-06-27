@@ -15,9 +15,9 @@ import sqlite3
 import tempfile
 from pathlib import Path
 
-from setu import privacy, registry
-from setu import vault as vaultmod
-from setu.ingest import Record
+from drishti import privacy, registry
+from drishti import vault as vaultmod
+from drishti.ingest import Record
 
 # Keep the audit trail in the temp dir so the demo is self-contained.
 TMP = Path(tempfile.mkdtemp(prefix="setu_demo_"))

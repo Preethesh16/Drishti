@@ -13,8 +13,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from setu import config as C
-from setu.ingest import Record
+from drishti import config as C
+from drishti.ingest import Record
 
 try:
     from rapidfuzz import fuzz as _fuzz
@@ -149,7 +149,7 @@ def find_candidates(
 
 
 if __name__ == "__main__":
-    from setu.ingest import load_records
+    from drishti.ingest import load_records
 
     recs, _ = load_records()
     # demo: pick the first record flagged as a duplicate and show its top-3

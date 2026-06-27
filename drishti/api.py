@@ -20,11 +20,11 @@ from __future__ import annotations
 import os
 from collections import Counter
 
-from setu import config as C
-from setu import registry
-from setu import vault as vaultmod
-from setu.ingest import Record
-from setu.matcher_tier1 import find_candidates
+from drishti import config as C
+from drishti import registry
+from drishti import vault as vaultmod
+from drishti.ingest import Record
+from drishti.matcher_tier1 import find_candidates
 
 
 # ----------------------------------------------------------------------------
@@ -174,7 +174,7 @@ def seed_demo(db_path=C.REGISTRY_DB, vault_path=C.VAULT_DB) -> int:
     reunited cases, 5 languages) IN chronological order with the B2 hook live, so
     the registry, retroactive candidates, and reveal-on-confirm all have something
     to show. NOT the real number — that needs the hackathon CSV."""
-    from setu import privacy
+    from drishti import privacy
     registry.init_db(db_path)
     vaultmod.init_vault(vault_path)
     n = 0
