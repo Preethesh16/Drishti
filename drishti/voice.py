@@ -273,6 +273,26 @@ _STRUCT_SYS = (
 )
 
 
+# Multi-turn conversation plan — the assistant asks these one at a time, ChatGPT-
+# style: speak → reporter answers by voice → extract → next question.
+CONVO_QUESTIONS = [
+    "Namaste. What is your name, and what is your relation to the person you are looking for?",
+    "What is their name, about how old are they, and are they male or female?",
+    "How do they look — are they tall, average or short; thin or heavy; long or short hair, and what colour; their skin tone?",
+    "What clothes are they wearing, and do they have any marks, scars, glasses, or a walking stick?",
+    "Where did you last see them — the nearest booth or landmark?",
+]
+
+
+def merge_fields(collected: dict, new: dict) -> dict:
+    """Merge freshly-extracted fields into the running set, keeping non-empty values."""
+    out = dict(collected or {})
+    for k, val in (new or {}).items():
+        if val and str(val).strip() and str(val).strip() not in ("Unknown", "—"):
+            out[k] = val
+    return out
+
+
 def assistant_prompt() -> str:
     """The question the voice assistant asks the reporter (spoken in their language)."""
     return (

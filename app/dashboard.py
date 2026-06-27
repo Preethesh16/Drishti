@@ -16,6 +16,7 @@ from __future__ import annotations
 import streamlit as st
 
 from drishti import config as C
+from drishti import i18n
 
 st.set_page_config(page_title="Drishti", page_icon="🪔", layout="wide")
 
@@ -36,20 +37,18 @@ def _ensure():
 
 api, seed_msg, init_err = _ensure()
 
-st.title("🪔 Drishti — reuniting the lost at Nashik Kumbh 2027")
-st.caption("We don't track people or scan faces. We connect the two halves of "
-           "every search — the family looking and the person found — across "
-           "centers that today can't see each other, in any language, on weak "
-           "data, without ever surveilling anyone.")
-
-# ---- sidebar: live DB connection status + demo controls ---------------------
+# ---- sidebar: website language + live DB status -----------------------------
 with st.sidebar:
-    st.subheader("🗄️ Registry (live DB)")
+    ui_lang = st.selectbox("🌐 " + i18n.EN["ui_lang"], list(i18n.UI_LANGS),
+                           help="Translates the whole interface.")
+    T = i18n.translator(ui_lang)            # t(key) for the chosen UI language
+    st.divider()
+    st.subheader("🗄️ " + T("registry_live"))
     if init_err:
         st.error(f"DB not connected: {init_err}")
     else:
         s = api.stats()
-        st.metric("De-identified records", s["total"])
+        st.metric(T("records"), s["total"])
         st.caption(f"open {s['open']} · reunited {s['reunited']} · "
                    f"{s['centers']} centers · {s['languages']} languages")
         st.caption(f"vault: {s['vault_live']} live / {s['vault_purged']} purged (raw PII, 0600)")
@@ -59,14 +58,18 @@ with st.sidebar:
             api.reset()
             st.rerun()
 
+st.title("🪔 Drishti — Nashik Kumbh 2027")
+st.caption(T("tagline"))
+
 tab_file, tab_registry, tab_matches, tab_maps, tab_validation, tab_mesh = st.tabs(
-    ["📝 File", "📚 Registry", "🔗 Matches", "🗺️ Maps", "✅ Validation", "📡 Mesh"]
+    [T("tab_file"), T("tab_registry"), T("tab_matches"),
+     T("tab_maps"), T("tab_validation"), T("tab_mesh")]
 )
 
 # ---------------------------------------------------------------- File (intake)
 with tab_file:
-    st.header("Intake — staffed booth, voice-first, any language")
-    st.caption("Nothing here is mandatory. Say or fill in whatever is known.")
+    st.header(T("file_header"))
+    st.caption(T("nothing_mandatory"))
     if init_err:
         st.error(f"DB not connected: {init_err}")
     else:
@@ -85,84 +88,131 @@ with tab_file:
         def _clean(x):  # drop the "unknown / not set" placeholders
             return "" if not x or x in ("Unknown", "—") else x
 
-        fork = st.radio("What happened?", ["🔍 Lost someone", "🙋 Found someone"],
-                        horizontal=True)
+        def _say(text_en, lang_name):
+            spoken = voice.translate(text_en, target_code=voice.lang_code(lang_name))
+            return spoken, voice.speak(spoken, voice.lang_code(lang_name))
+
+        fork = st.radio(T("what_happened"), [T("lost"), T("found")], horizontal=True)
         langs = list(C.SARVAM_LANG_CODES.keys())
-        lang = st.selectbox("Reporter's language", langs,
+        lang = st.selectbox(T("reporter_lang"), langs,
                             index=_idx(langs, (st.session_state.get("voice") or {})
                                        .get("fields", {}).get("language")))
-
-        # ---- 🎙️ VOICE ASSISTANT: asks in the reporter's language, then fills ----
-        st.markdown("##### 🎙️ Voice assistant")
         asr = ("Sarvam" if voice.have_sarvam() else
                "local Whisper (free)" if voice.have_asr() else "unavailable")
         brain = "Claude" if llm.have_claude() else "built-in heuristics"
-        a1, a2 = st.columns([1, 1])
-        if a1.button(f"🔊 Ask the questions in {lang}", use_container_width=True):
-            q_en = voice.assistant_prompt()
-            spoken = voice.translate(q_en, target_code=voice.lang_code(lang))
-            st.session_state["ask"] = (spoken, voice.speak(spoken, voice.lang_code(lang)))
-        a2.caption(f"ASR: **{asr}** · Understand: **{brain}**")
-        ask = st.session_state.get("ask")
-        if ask:
-            st.info(f"🗣️ Assistant asks (in {lang}): {ask[0]}")
-            if ask[1]:
-                st.audio(base64.b64decode(ask[1]), format="audio/mp3")
 
-        clip = st.audio_input("🎙️ Record the reporter's answer (kept with the case)")
-        if clip is not None:
-            st.session_state["clip_bytes"] = clip.getvalue()
-            if st.button("🧠 Understand & auto-fill the form"):
-                with st.spinner(f"Listening ({asr}) + understanding ({brain})…"):
-                    st.session_state["voice"] = voice.voice_to_fields(clip)
+        st.markdown("##### " + T("voice_assistant") + f"  ·  _ASR: {asr} · {brain}_")
+        vmode = st.radio("vmode", [T("live_convo"), "⚡ One-shot"],
+                         horizontal=True, label_visibility="collapsed")
+
+        if vmode == "⚡ One-shot":
+            # one recording → fills the whole form
+            if st.button(f"{T('ask_in')} {lang}"):
+                st.session_state["ask"] = _say(voice.assistant_prompt(), lang)
+            ask = st.session_state.get("ask")
+            if ask:
+                st.info(f"🗣️ {ask[0]}")
+                if ask[1]:
+                    st.audio(base64.b64decode(ask[1]), format="audio/mp3", autoplay=True)
+            clip = st.audio_input(T("record_answer"))
+            if clip is not None:
+                st.session_state["clip_bytes"] = clip.getvalue()
+                if st.button(T("understand_fill")):
+                    with st.spinner(f"{asr} + {brain}…"):
+                        st.session_state["voice"] = voice.voice_to_fields(clip)
+        else:
+            # ChatGPT-style: assistant asks one question at a time, by voice
+            qs = voice.CONVO_QUESTIONS
+            convo = st.session_state.setdefault("convo", {"turn": -1, "collected": {},
+                                                          "history": [], "q_text": "", "q_audio": None})
+
+            def _ask_turn(i):
+                convo["q_text"], convo["q_audio"] = _say(qs[i], lang)
+
+            if convo["turn"] < 0:
+                if st.button("▶ " + T("live_convo"), type="primary"):
+                    convo["turn"] = 0
+                    _ask_turn(0)
+                    st.rerun()
+            elif convo["turn"] < len(qs):
+                turn = convo["turn"]
+                st.info(f"🗣️ ({turn + 1}/{len(qs)}) {convo['q_text']}")
+                if convo["q_audio"]:
+                    st.audio(base64.b64decode(convo["q_audio"]), format="audio/mp3", autoplay=True)
+                ans = st.audio_input(T("record_answer"), key=f"ans{turn}")
+                b1, b2 = st.columns(2)
+                if ans is not None and b1.button("✅ Answer → next question"):
+                    st.session_state["clip_bytes"] = ans.getvalue()
+                    with st.spinner(f"{asr} + {brain}…"):
+                        txt = voice.transcribe_to_english(ans)
+                        ext = (voice.structure_report(txt) or voice._heuristic_fields(txt)) if txt else {}
+                        convo["collected"] = voice.merge_fields(convo["collected"], ext)
+                        convo["history"].append(txt or "")
+                    convo["turn"] += 1
+                    if convo["turn"] < len(qs):
+                        _ask_turn(convo["turn"])
+                    st.rerun()
+                if b2.button("⏭ Skip / finish"):
+                    convo["turn"] = len(qs)
+                    st.rerun()
+            else:
+                st.success("✅ Conversation complete — review the fields below and file.")
+                if st.button("🔄 Restart conversation"):
+                    st.session_state.pop("convo", None)
+                    st.rerun()
+            # feed whatever the conversation collected into the shared form fields
+            st.session_state["voice"] = {
+                "transcript": " · ".join(t for t in convo.get("history", []) if t),
+                "fields": convo.get("collected", {}), "asr": True,
+                "structured": llm.have_claude()}
+            if convo.get("collected"):
+                st.caption("📋 " + " · ".join(f"**{k}**: {vv}" for k, vv in convo["collected"].items()))
+
         v = st.session_state.get("voice") or {}
         vf = v.get("fields", {}) if v else {}
-        if v.get("transcript"):
+        if v.get("transcript") and vmode == "⚡ One-shot":
             st.success(f"🗣️ Heard (→ English): “{v['transcript']}”")
-            st.caption(("✅ Claude structured the fields below — " if v.get("structured")
-                        else "ℹ️ auto-extracted (set ANTHROPIC_API_KEY for full structuring) — ")
-                       + "review/edit; all optional.")
 
         # ---- the form (voice-filled when you transcribe; everything optional) ----
-        st.markdown("##### 📝 Details (all optional)")
+        st.markdown("##### " + T("details_optional"))
         r1, r2, r3 = st.columns(3)
-        reporter_name = r1.text_input("Your name", value=vf.get("reporter_name", ""))
-        relation = r2.text_input("Relation to them", value=vf.get("relation", ""),
+        reporter_name = r1.text_input(T("your_name"), value=vf.get("reporter_name", ""))
+        relation = r2.text_input(T("relation"), value=vf.get("relation", ""),
                                  placeholder="son, wife, friend…")
-        person_name = r3.text_input("Their name", value=vf.get("missing_person_name", ""))
+        person_name = r3.text_input(T("their_name"), value=vf.get("missing_person_name", ""))
 
         g1, g2, g3 = st.columns(3)
-        gender = g1.selectbox("Gender", ["Unknown", "Male", "Female"],
+        gender = g1.selectbox(T("gender"), ["Unknown", "Male", "Female"],
                               index=_idx(["Unknown", "Male", "Female"], vf.get("gender")))
         age_opts = ["—"] + C.AGE_ORDER
-        age = g2.selectbox("Age band", age_opts, index=_idx(age_opts, vf.get("age_band")))
+        age = g2.selectbox(T("age"), age_opts, index=_idx(age_opts, vf.get("age_band")))
         try:
             booth_names = [p.name for p in geo.load_points()]
-            seen_near = g3.selectbox("Last seen near (booth)", booth_names,
+            seen_near = g3.selectbox(T("last_seen"), booth_names,
                                      index=_idx(booth_names, vf.get("last_seen_location")))
         except Exception:
-            seen_near = g3.text_input("Last seen near", vf.get("last_seen_location", ""))
+            seen_near = g3.text_input(T("last_seen"), vf.get("last_seen_location", ""))
 
         h1, h2, h3 = st.columns(3)
-        height = h1.selectbox("Height", ["Unknown", "Tall", "Average", "Short"],
+        height = h1.selectbox(T("height"), ["Unknown", "Tall", "Average", "Short"],
                               index=_idx(["Unknown", "Tall", "Average", "Short"], vf.get("height")))
-        build = h2.selectbox("Build", ["Unknown", "Thin", "Average", "Heavy"],
+        build = h2.selectbox(T("build"), ["Unknown", "Thin", "Average", "Heavy"],
                              index=_idx(["Unknown", "Thin", "Average", "Heavy"], vf.get("build")))
-        complexion = h3.selectbox("Complexion", ["Unknown", "Fair", "Medium", "Dark"],
+        complexion = h3.selectbox(T("complexion"), ["Unknown", "Fair", "Medium", "Dark"],
                                   index=_idx(["Unknown", "Fair", "Medium", "Dark"], vf.get("complexion")))
         hr1, hr2 = st.columns(2)
-        hair_len = hr1.selectbox("Hair length", ["Unknown", "Long", "Short", "Bald"],
+        hair_len = hr1.selectbox(T("hair_length"), ["Unknown", "Long", "Short", "Bald"],
                                  index=_idx(["Unknown", "Long", "Short", "Bald"], vf.get("hair_length")))
-        hair_color = hr2.text_input("Hair colour", value=vf.get("hair_color", ""),
+        hair_color = hr2.text_input(T("hair_color"), value=vf.get("hair_color", ""),
                                     placeholder="black, grey, white…")
-        clothing = st.text_input("What are they wearing?", value=vf.get("clothing", ""),
+        clothing = st.text_input(T("wearing"), value=vf.get("clothing", ""),
                                  placeholder="saffron kurta, blue saree…")
-        marks = st.text_input("Marks / aids", value=vf.get("marks", ""),
+        marks = st.text_input(T("marks"), value=vf.get("marks", ""),
                               placeholder="mole, scar, walking stick, glasses, hard of hearing")
-        notes = st.text_area("Anything else", value="")
-        mobile = st.text_input("Contact mobile (optional)", value="")
+        notes = st.text_area(T("anything_else"), value="")
+        mobile = st.text_input(T("contact"), value="")
 
-        if st.button("✓ File report (prints Case-ID slip)", type="primary"):
+        if st.button(T("file_report"), type="primary"):
             case_id = "KMP-2027-" + uuid.uuid4().hex[:5].upper()
             rtype = "missing" if fork.startswith("🔍") else "found"
             # compose an English description from the optional appearance fields
@@ -222,7 +272,7 @@ with tab_file:
 
 # ---------------------------------------------------------------- Registry
 with tab_registry:
-    st.header("The shared registry — one pool, all centers")
+    st.header(T("registry_header"))
     if init_err:
         st.error(f"DB not connected: {init_err}")
     else:
@@ -241,7 +291,7 @@ with tab_registry:
 
 # ---------------------------------------------------------------- Matches
 with tab_matches:
-    st.header("Matches — top-3 with explainable confidence")
+    st.header(T("matches_header"))
     if init_err:
         st.error(f"DB not connected: {init_err}")
     else:
@@ -300,7 +350,7 @@ with tab_matches:
 
 # ---------------------------------------------------------------- Maps
 with tab_maps:
-    st.header("🗺️ Nashik Kumbh — broadcast · where to search · where to place help")
+    st.header("🗺️ " + T("maps_header"))
     try:
         from drishti import geo, drift, blindspot
         from streamlit_folium import st_folium
@@ -350,8 +400,8 @@ with tab_maps:
 
 # ---------------------------------------------------------------- Validation
 with tab_validation:
-    st.header("THE NUMBER")
-    if st.button("Run validation (offline)"):
+    st.header(T("validation_header"))
+    if st.button(T("run_validation")):
         try:
             from drishti.validate import run
             with st.spinner("scoring…"):
@@ -362,7 +412,7 @@ with tab_validation:
 
 # ---------------------------------------------------------------- Mesh
 with tab_mesh:
-    st.header("📡 Connectivity ladder — LAN → booth↔booth P2P → SMS")
+    st.header("📡 " + T("mesh_header"))
     st.caption("Capture NEVER blocks. Normal: booths sync to central over LAN. LAN down: "
                "booths sync peer-to-peer with neighbours. Worst case: one SMS carries the report.")
     from drishti import mesh, sms
