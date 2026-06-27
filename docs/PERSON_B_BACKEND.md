@@ -67,7 +67,9 @@ python -m setu.registry     # -> "registry seeded: 2500 records"
   the reports."*
 
 ### Stretch — thin API / MCP
-- A function-level or FastAPI API the dashboard calls (decouple C from your internals).
+- ✅ **Done — `setu/api.py`** is the function-level API the dashboard calls (decouples C
+  from the registry/vault internals). `app/dashboard.py` is now wired to the live DB
+  through it, and `ensure_seeded()` makes it work with or without the real data drop.
 - MCP server exposing the registry as a tool Claude queries (aligns with the govt
   "Agentic Kumbh / Kumbh Doot" blueprint). Build only if everything else is green.
 

@@ -116,3 +116,37 @@ Audit log shows every REVEAL / PURGE / CONFIRM_MATCH / REVEAL_DENIED line.
 two offline DBs diverge then converge); B5 `mesh.py` simulated DTN demo (sim only,
 first to cut). Then merge `backend` → `main`. The real `seed_from_csv`/vault counts
 still wait on the data drop, but all B logic is data-independent and proven.
+
+---
+
+## 2026-06-27 — Turn 4 — Person B: connect the DB to the app (thin API)
+
+**Asked:** "connect the db too please" — the dashboard was reading the CSV directly
+and never touched the registry database B built.
+
+**Did (branch `backend`):**
+- **`setu/api.py`** — the thin facade (B's stretch goal): `stats`, `list_records`,
+  `get_record`, `find_matches` (live Tier-1 vs the open, time-windowed pool),
+  `candidates`, `file_report` (→ vault + registry + B2 hook), `confirm` (reveal-on-
+  confirm), `ensure_seeded`, `reset`. Nothing outside `setu/` touches SQLite now.
+- **`ensure_seeded()`** makes the connected DB usable with OR without the data drop:
+  seeds from the real `Synthetic_Missing_Persons_2500.csv` if present, else a small
+  built-in **demo set** (`seed_demo`: 9 records, cross-center match pairs, singletons,
+  reunited cases, 5 languages) inserted chronologically with the B2 hook live.
+- **Connected `app/dashboard.py`** to the live DB through `setu.api` (was reading the
+  CSV via `ingest.load_records`). Registry tab = live de-identified pool from
+  registry.db; Matches tab = pick an open case → `find_matches` → score + per-signal
+  reasons → **✅ Confirm reunion** button → reveal-on-confirm shows the contact, then
+  it's purged. Sidebar shows live DB stats + a "Reset demo data" button.
+
+**Ran:** `python -m setu.api` → seeded 9 demo records into a persistent registry.db
+(0644) + setu_vault.db (**0600**, locked); M1→F1 = 82.1 [STRONG], M8 = 59.0 weaker
+(ranked). Headless flow of the exact dashboard calls: `confirm("M1","F1")` revealed
+"Sunita Patil / 9812345678", purged both, both Reunited, post-purge vault read = {},
+stats updated (open 7→5, reunited 2→4, vault live 9→7 / purged 0→2). `dashboard.py`
+compiles; needs `pip install -r requirements.txt` (streamlit not in this env) to
+launch the server.
+
+**Git:** committed on `backend`.
+
+**Next (B):** B3 sync/merge, B5 mesh, then merge `backend` → `main`.

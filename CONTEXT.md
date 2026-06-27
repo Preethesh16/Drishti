@@ -57,8 +57,8 @@ Age order: `['0-12','13-17','18-40','41-60','61-70','71-80','80+']`.
 Drishti/
 ├── data/ (README; DROP the 5 CSVs + 4 KMLs here — currently EMPTY)
 ├── setu/ __init__ · config · privacy · ingest · matcher_tier1 · validate · registry ·
-│        vault (B1) · llm · voice
-├── app/dashboard.py (Streamlit, 6 tabs)
+│        vault (B1) · api (B facade) · llm · voice
+├── app/dashboard.py (Streamlit, 6 tabs — now wired to the live DB via setu.api)
 ├── scripts/demo_backend.py (B1/B2/B4 verification — runs with no data, no keys)
 ├── docs/ PERSON_A_CORE.md · PERSON_B_BACKEND.md · PERSON_C_DESIGN.md
 ├── PROGRESS.md · PHASE_LOG.md · CONTEXT.md · README.md · requirements.txt
@@ -81,6 +81,9 @@ setu.registry:      init_db, add_record(rec, rematch=True), set_status, seed_fro
                     # ^ B4: now returns a dict (was a string); raw contact + purge happen here
 setu.vault:         init_vault, put, seed_vault(vault), get(vid, actor=, reason=) -> {} | raw,
                     purge(vid, actor=), count() -> (live, purged)   # access-controlled raw PII
+setu.api:           ensure_seeded(), stats(), list_records(open_only, limit), get_record(id),
+                    find_matches(id, top_k) -> [dict], candidates(id), file_report(rec),
+                    confirm(a, b, actor, reason)   # THE door the dashboard calls (B's facade)
 setu.privacy:       hash_pii, mask_name, mask_mobile, reveal(case_id, fields, actor, reason), audit
 setu.validate:      run() -> {method_a, method_b}
 ```
@@ -107,6 +110,10 @@ fixture-proven) → **(real data → tag v0.1-number)** → 5 dashboard → 6 ti
   `add_record` fires a retroactive re-match (new `candidates` table + `get_candidates`);
   `confirm_match` does reveal-on-confirm → audit → purge and returns a dict. Proven by
   `scripts/demo_backend.py` (no data, no keys → ALL CHECKS PASSED).
+- **DB connected to the app** via `setu/api.py` (B's thin facade): the dashboard now
+  reads/writes registry.db + setu_vault.db through the API (no CSV, no direct SQLite).
+  `api.ensure_seeded()` seeds from the real CSV if present, else a 9-record demo set, so
+  the connection works with no data drop. registry.db is 0644; setu_vault.db is 0600.
 - Python 3.10.12 / pandas 2.3.3 in this env (rapidfuzz optional, stdlib Jaccard fallback).
 - **BLOCKER:** `data/` is empty — user must drop the 5 CSVs + 4 KMLs. Optional keys:
   `SARVAM_API_KEY` (voice), `ANTHROPIC_API_KEY` (Tier-2 + structuring) in `.env`.
