@@ -67,7 +67,10 @@ streamlit run app/dashboard.py
 ## The contract you consume (don't reach past these)
 ```python
 from drishti.ingest import load_records, Record
-from drishti.matcher_tier1 import find_candidates          # -> list[ScoreResult]
+from drishti.matcher_tier2 import match     # PREFERRED for the Matches tab:
+#   match(target, pool, top_k=3) -> [EnrichedResult(.case_id, .score, .band, .reason, .tier2_used)]
+#   .band is 'auto' (≥70, green) | 'review' (≥40, amber) | 'none' — colour the cards by band.
+from drishti.matcher_tier1 import find_candidates          # raw Tier-1 if you need it
 from drishti.registry import get_records, confirm_match
 from drishti.privacy import mask_name, mask_mobile, reveal
 from drishti.validate import run

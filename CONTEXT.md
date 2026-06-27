@@ -55,12 +55,13 @@ Age order: `['0-12','13-17','18-40','41-60','61-70','71-80','80+']`.
 ## Repo layout (current)
 ```
 Drishti/
-├── data/ (README; DROP the 5 CSVs + 4 KMLs here — currently EMPTY)
-├── drishti/ __init__ · config · privacy · ingest · matcher_tier1 · validate · registry
-├── app/dashboard.py (Streamlit, 6 tabs)
+├── data/ (README; stand-in CSV present; DROP official 5 CSVs + 4 KMLs here)
+├── drishti/ __init__ · config · privacy · ingest · matcher_tier1 · matcher_tier2 · validate
+│            · registry · llm · voice
+├── app/dashboard.py (Streamlit, 6 tabs) · scripts/make_demo_data.py
 ├── docs/ PERSON_A_CORE.md · PERSON_B_BACKEND.md · PERSON_C_DESIGN.md
 ├── PROGRESS.md · PHASE_LOG.md · CONTEXT.md · README.md · requirements.txt
-└── (todo) drishti/matcher_tier2 · voice · geo · drift · blindspot · mesh · scripts/build_geo
+└── (todo) drishti/geo · drift · blindspot · mesh · scripts/build_geo
 ```
 
 ## Team split (parallel branches → merge to main at green checkpoints)
@@ -72,6 +73,9 @@ See `docs/PERSON_*.md`. Stable contracts:
 drishti.ingest:        Record, load_records()  -> (records, vault)
 drishti.matcher_tier1: find_candidates(target, pool, top_k=3, require_open=False) -> [ScoreResult]
                     ScoreResult(.case_id, .score 0..100, .raw, .reasons dict)
+drishti.matcher_tier2: match(target, pool, top_k=3, tier2_k=5, require_open=False) -> [EnrichedResult]
+                    EnrichedResult(.case_id, .score, .band 'auto'|'review'|'none', .reason, .tier2_used)
+                    band thresholds: MATCH_AUTO=70 (alert human, not auto-reunite), MATCH_REVIEW=40
 drishti.registry:      init_db, add_record, get_records(open_only, window_hours), set_status,
                     confirm_match(a, b, actor), seed_from_csv
 drishti.privacy:       hash_pii, mask_name, mask_mobile, reveal(case_id, fields, actor, reason), audit
@@ -89,18 +93,20 @@ fixture-proven) → **(real data → tag v0.1-number)** → 5 dashboard → 6 ti
 8 voice → 9 mesh. Cut-lines if short: mesh → drift → tier2 → maps. Never cut spine/number.
 
 ## CURRENT STATE (update every turn)
-- **Date:** 2026-06-27. Branches on `Preethesh16/Drishti`: `main` (integration),
-  `core` (A), `backend` (B), `design` (C). Voice work merged core → main.
-- Spine built and proven on a synthetic fixture: Method A recall 100% / gap 15.6;
-  Method B recall@1 90% / @3 100%. **Real number pending real data drop.**
-- Voice done (A4): `drishti/voice.py` (Sarvam ASR/TTS/translate) + `drishti/llm.py`
-  (shared Claude helper). Both degrade cleanly with no keys (verified, no crash).
-- Python 3.14.5, pandas 3.0.2 (rapidfuzz optional, has stdlib fallback).
-- **Pipeline runs end-to-end on STAND-IN data** (`python scripts/make_demo_data.py`
-  → `data/Synthetic_Missing_Persons_2500.csv`, 2500 rows / 202 dupes): Method A recall
-  100% / gap 12.3; Method B recall@1 96.5%. (100% expected on self-made dupes — proves
-  the pipeline. Real number awaits official 202; not yet tagged v0.1-number.)
-- **Still need:** the OFFICIAL 5 CSVs + 4 KMLs (real number + maps). Optional keys:
+- **Date:** 2026-06-27. Name = **Drishti** (was codename "Kumbh Setu"). Branches on
+  `Preethesh16/Drishti`: `main` (integration), `core` (A), `backend` (B), `design` (C).
+- **Done so far:** spine (config/privacy/ingest/matcher_tier1/validate); `llm.py`;
+  `voice.py` (A4 Sarvam); **`matcher_tier2.py` (A3 Claude cross-lingual + bands)**;
+  registry base; dashboard skeleton; stand-in data generator. All fallback-safe.
+- **Connectivity model (decided):** LAN→central (normal) → booth↔booth P2P (only on
+  LAN loss) → local queue → SMS. Booth is STAFFED (operator-mediated). [B to build]
+- **Match bands:** auto≥70 (alert a human, never auto-reunite), review≥40, else none.
+- **Pipeline green on STAND-IN data** (`python scripts/make_demo_data.py`): Method A
+  recall 100% / gap 12.3; Method B recall@1 ~97%. (100% expected on self-made dupes —
+  proves the pipeline; real number awaits official 202; not yet tagged v0.1-number.)
+- Python 3.14.5, pandas 3.0.2 (rapidfuzz optional; stdlib fallback).
+- **Still need:** OFFICIAL 5 CSVs + 4 KMLs (real number + maps). Optional keys:
   `SARVAM_API_KEY` (voice), `ANTHROPIC_API_KEY` (Tier-2 + structuring) in `.env`.
-- **Next:** real `validate` run + threshold tune → tag v0.1-number, then A3 Tier-2
+- **Next:** A — lock the number when data lands. B — B1 registry + connectivity
+  ladder/SMS-sim. C — C1 intake + Matches tab via `matcher_tier2.match()` + maps (geo-data-gated).
   (A); registry hardening B1 (B); intake UI + branding C1 (C).

@@ -1,8 +1,10 @@
 # PROGRESS — Drishti
 
-**Current phase:** Phase 1 — Spine scaffolded & proven on fixture.
+**Current phase:** Phase 2 — workflow build (renamed to Drishti; Tier-2 + bands done).
 **Next checkpoint:** drop real `data/Synthetic_Missing_Persons_2500.csv` → run
 `python -m drishti.validate` → tune `DUP_THRESHOLD` → tag `v0.1-number`.
+
+- [x] Phase 0 — renamed Kumbh Setu → **Drishti** (package `setu/`→`drishti/`); all branches synced
 
 > ✅ **Pipeline runs on STAND-IN data** (`python scripts/make_demo_data.py`).
 > ⚠️ Still need the **OFFICIAL** 5 CSVs + 4 KMLs for the real number + the maps.
@@ -29,8 +31,10 @@
 - [x] A4 `voice.py` — Sarvam ASR/TTS/translate + Claude structuring + containment
       TTS; runs in fallback with no keys (merged to main). _Needs a SARVAM key +
       real audio to fully exercise._
+- [x] A3 `matcher_tier2.py` — Claude cross-lingual desc match + decision bands
+      (auto≥70 / review≥40 / none) + human reason; `match()` Step-5 pipeline.
+      Verified offline; lights up with `ANTHROPIC_API_KEY`.
 - [ ] A2 lock the number (tune threshold on real data) ← **gated on data drop**
-- [ ] A3 `matcher_tier2.py` — Claude cross-lingual + reasons (degrade w/o key)
 
 ## Person B — Backend / DB / Sync (`backend`)
 - [x] `registry.py` working minimal base (SQLite, CRUD, confirm_match, seed_from_csv)

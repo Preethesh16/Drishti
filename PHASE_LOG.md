@@ -99,3 +99,30 @@ spine on it.
 
 **Next:** (User) drop official file → I re-run + tune threshold + tag v0.1-number.
 (B) B1 registry hardening. (C) C1 intake + branding (dashboard runs against stand-in now).
+
+---
+
+## 2026-06-27 — Turn 4 — Workflow plan approved → rename + Tier-2 + bands
+
+**Asked:** User explained the full 7-step operational workflow; two changes —
+(1) staffed booth not self-kiosk, (2) LAN-primary, booth↔booth P2P only when LAN
+drops. Then: project name is **Drishti** (not Kumbh Setu). Approved the plan.
+
+**Did:**
+- **Phase 0 rename**: `git mv setu drishti`; updated all imports/docstrings/module
+  refs; rebranded README/docs/tracking/dashboard → Drishti; `setu_vault.db` →
+  `drishti_vault.db`. ("Setup" headers left intact.) Spine re-verified green.
+- **A3 `drishti/matcher_tier2.py`**: Tier-1 top-K → Claude compares descriptions
+  cross-lingually → re-score description signal → re-rank → decision band → reason.
+  `match(target, pool, top_k, tier2_k)` is the Step-5 entrypoint. Fallback-safe.
+- **config**: `MATCH_AUTO=70`, `MATCH_REVIEW=40` bands (auto = alert a human, never
+  auto-reunite). Updated plan file with LAN→P2P ladder + Drishti naming.
+
+**Ran:** `drishti.validate` (green: A 100%/gap 12.3, B@1 97%); `drishti.matcher_tier2`
+offline → top-3 with bands [auto]/[review] + templated reasons, no crash w/o key.
+
+**Git:** Phase 0 on main → synced to core/backend/design. A3 on core → merged to main.
+
+**Next:** (User) drop official data + (optional) keys. (A) lock the number when data
+lands; help B with connectivity-ladder/SMS-sim if needed. (B) B1. (C) C1 + Matches
+tab using `drishti.matcher_tier2.match()`.
