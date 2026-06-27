@@ -126,3 +126,34 @@ offline → top-3 with bands [auto]/[review] + templated reasons, no crash w/o k
 **Next:** (User) drop official data + (optional) keys. (A) lock the number when data
 lands; help B with connectivity-ladder/SMS-sim if needed. (B) B1. (C) C1 + Matches
 tab using `drishti.matcher_tier2.match()`.
+
+---
+
+## 2026-06-27 — Turn 5 — Voice fallback + Nashik map + landmark broadcast
+
+**Asked:** Use Sarvam + Microsoft-TTS fallback for the voice assistant (any-language
+complaint → translated structured details). Build a Nashik map with NAMED landmarks,
+booths every ~500m; a new report fires an emergency signal to all nearby booths in
+radius (person may have drifted there); name landmarks ("near West Hall").
+
+**Did:**
+- **Voice** (`drishti/voice.py`): added FREE **Microsoft edge-tts** fallback in
+  `speak()` (no key → still speaks, base64 MP3); `translate()` now Sarvam→**Claude**
+  fallback; `structure_report()` hardened to understand ANY Indian language and
+  normalise the description to English for the matcher. Added `edge-tts` to requirements.
+- **Geo** (`drishti/geo.py` + `scripts/make_nashik_geo.py` → `data/nashik_landmarks.csv`):
+  14 real Nashik landmarks + 36 booths on a ~500m grid; haversine; `nearby_booths()`
+  / `broadcast_alert()` = the emergency set; `build_map()` folium map (alert radius +
+  alerted booths in red).
+- **Website**: Maps tab = live Nashik map (pick where a report lands → radius + booths
+  light red + list). File tab = staffed-booth intake (language picker, landmark
+  dropdown, file → booths alerted; Found-flow plays containment TTS).
+- Env: created `.venv --system-site-packages` + folium/streamlit-folium/edge-tts
+  (PEP 668 system Python; no --break-system-packages). Streamlit now run via
+  `.venv/bin/python -m streamlit`.
+
+**Ran:** `make_nashik_geo` → 50 points; `drishti.geo` → report near Ramkund alerts 11
+booths ≤1km; folium map builds; `drishti.voice` → edge-tts produces audio with no keys;
+dashboard serves HTTP 200 with the map at localhost:8501.
+
+**Next:** Matches tab (C2) with bands + reveal; SMS-sim + P2P (B); official data → number.

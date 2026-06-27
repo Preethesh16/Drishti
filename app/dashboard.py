@@ -38,12 +38,41 @@ tab_file, tab_registry, tab_matches, tab_maps, tab_validation, tab_mesh = st.tab
 records, err = _load_records()
 
 with tab_file:
-    st.header("Intake — voice-first, operator-mediated")
-    st.info("PERSON C: build the two big forks (Lost / Found), voice button "
-            "(drishti.voice), landmark location picker. Keep it brain-dead simple.")
-    col1, col2 = st.columns(2)
-    col1.button("🔍 Lost someone?", use_container_width=True)
-    col2.button("🙋 Found someone?", use_container_width=True)
+    st.header("Intake — staffed booth, voice-first, any language")
+    from drishti import config as C
+    fork = st.radio("What happened?", ["🔍 Lost someone", "🙋 Found someone"],
+                    horizontal=True)
+    lang = st.selectbox("Reporter's language", list(C.SARVAM_LANG_CODES.keys()))
+    st.caption("Operator holds to speak; the report may be in ANY language "
+               "(Tamil, Bhojpuri…) — Claude translates it and fills the fields.")
+    try:
+        from drishti import geo
+        names = [p.name for p in geo.load_points()]
+        seen_near = st.selectbox("Last seen near (landmark / booth)", names)
+    except Exception:
+        seen_near = st.text_input("Last seen near (landmark)", "Ramkund Ghat")
+    desc = st.text_area("Description (operator speaks; any language)",
+                        placeholder="e.g. saffron kurta, walking stick, hard of hearing")
+    if st.button("✓ File report (prints Case-ID slip)"):
+        try:
+            from drishti import geo
+            payload = geo.broadcast_alert(seen_near, radius_m=1000)
+            st.success(f"Filed · slip printed. 🚨 Emergency signal sent to "
+                       f"**{payload['count']} booths** within 1 km of *{seen_near}* "
+                       f"(the person may have drifted there).")
+            st.write(", ".join(b["name"] for b in payload["alerted_booths"][:10]))
+        except Exception as e:
+            st.warning(f"Run scripts/make_nashik_geo.py first. ({e})")
+        if fork.startswith("🙋"):
+            try:
+                import base64
+                from drishti import voice
+                txt, audio = voice.containment_message(lang)
+                st.info(f"🔊 Spoken to the found person in {lang}: “{txt}”")
+                if audio:
+                    st.audio(base64.b64decode(audio), format="audio/mp3")
+            except Exception as e:
+                st.caption(f"(voice fallback unavailable: {e})")
 
 with tab_registry:
     st.header("The shared registry")
@@ -65,8 +94,30 @@ with tab_matches:
             "render score + per-signal reasons + the reveal-on-confirm button.")
 
 with tab_maps:
-    st.header("Drift predictor & blind-spot map")
-    st.info("PERSON C: folium overlays from drishti.geo / drift / blindspot (phase 6).")
+    st.header("🗺️ Nashik Kumbh — named landmarks · booths every ~500 m · live broadcast")
+    try:
+        from drishti import geo
+        from streamlit_folium import st_folium
+        pts = geo.load_points()
+        names = [p.name for p in pts]
+        default = names.index("Ramkund Ghat") if "Ramkund Ghat" in names else 0
+        left, right = st.columns([1, 2])
+        with left:
+            origin = st.selectbox("A report comes in near…", names, index=default)
+            radius = st.slider("Emergency radius (m)", 300, 2000, 1000, 100)
+            payload = geo.broadcast_alert(origin, radius_m=radius)
+            st.metric("🚨 Booths alerted", payload["count"])
+            st.caption("Every booth in the radius gets the signal — the lost "
+                       "person may have walked there.")
+            for b in payload["alerted_booths"][:12]:
+                st.write(f"• {b['name']} — {b['distance_m']} m")
+        with right:
+            fmap = geo.build_map(highlight=origin, radius_m=radius)
+            st_folium(fmap, height=520, use_container_width=True,
+                      returned_objects=[])
+    except Exception as e:
+        st.warning("Map needs the venv (folium + streamlit-folium) and "
+                   "`python scripts/make_nashik_geo.py`.\n\n" + str(e))
 
 with tab_validation:
     st.header("THE NUMBER")

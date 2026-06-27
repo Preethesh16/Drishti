@@ -96,8 +96,13 @@ fixture-proven) → **(real data → tag v0.1-number)** → 5 dashboard → 6 ti
 - **Date:** 2026-06-27. Name = **Drishti** (was codename "Kumbh Setu"). Branches on
   `Preethesh16/Drishti`: `main` (integration), `core` (A), `backend` (B), `design` (C).
 - **Done so far:** spine (config/privacy/ingest/matcher_tier1/validate); `llm.py`;
-  `voice.py` (A4 Sarvam); **`matcher_tier2.py` (A3 Claude cross-lingual + bands)**;
-  registry base; dashboard skeleton; stand-in data generator. All fallback-safe.
+  `voice.py` (Sarvam ASR/translate/TTS + **free edge-tts + Claude fallbacks**;
+  any-language → English structured details); `matcher_tier2.py` (Claude cross-lingual
+  + bands); `geo.py` (**Nashik named landmarks + ~500m booth grid + emergency
+  broadcast + folium map**); registry base; dashboard (Maps + File tabs LIVE);
+  data + nashik-geo generators. All fallback-safe.
+- **Env:** dev uses `.venv --system-site-packages` (folium/streamlit-folium/edge-tts
+  added; system has pandas/streamlit). Run app: `.venv/bin/python -m streamlit run app/dashboard.py`.
 - **Connectivity model (decided):** LAN→central (normal) → booth↔booth P2P (only on
   LAN loss) → local queue → SMS. Booth is STAFFED (operator-mediated). [B to build]
 - **Match bands:** auto≥70 (alert a human, never auto-reunite), review≥40, else none.

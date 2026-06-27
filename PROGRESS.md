@@ -47,10 +47,15 @@
 
 ## Person C — Design / Frontend / Maps (`design`)
 - [x] `app/dashboard.py` skeleton — 6 tabs wired to live data
-- [ ] C1 intake forks + branding
-- [ ] C2 Registry + Matches tabs (top-3 + reasons + reveal-on-confirm)
-- [ ] C3 `geo.py` / `blindspot.py` / `drift.py` + Maps tab (folium)
-- [ ] C4 Validation tab polish + demo script
+- [x] `drishti/geo.py` — Nashik named landmarks + ~500m booth grid + haversine
+      proximity + **emergency broadcast** (nearby booths in radius) + folium map
+- [x] `scripts/make_nashik_geo.py` → `data/nashik_landmarks.csv` (14 landmarks + 36 booths)
+- [x] Maps tab — live Nashik map: pick where a report lands → alert radius + booths lit red
+- [x] File tab — staffed-booth intake: language picker, landmark dropdown, file →
+      shows booths alerted; Found-flow plays containment TTS (edge-tts)
+- [ ] C2 Matches tab (top-3 + bands + reveal-on-confirm) via `matcher_tier2.match()`
+- [ ] C3 `blindspot.py` / `drift.py` overlays (need official geo data for full version)
+- [ ] C4 branding polish + demo script
 
 ## Git / GitHub
 - [x] committed scaffold → `origin/main` (`d4e1ebc`)

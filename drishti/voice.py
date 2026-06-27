@@ -87,37 +87,88 @@ def transcribe_to_english(audio_file) -> str | None:
 # ---------------------------------------------------------------------------
 def translate(text: str, target_code: str = C.PIVOT_LANG,
               source_code: str = "auto") -> str:
-    """Translate text. Falls back to returning the input unchanged with no key."""
+    """Translate text. Sarvam (Mayura) → Claude fallback → input unchanged.
+    So a Tamil/Bhojpuri complaint becomes usable English even without Sarvam."""
+    if not text:
+        return text
     client = _get_client()
-    if client is None or not text:
-        return text
-    try:
-        resp = client.text.translate(
-            input=text, source_language_code=source_code,
-            target_language_code=target_code, model=TRANSLATE_MODEL,
-        )
-        return getattr(resp, "translated_text", None) or text
-    except Exception:
-        return text
+    if client is not None:
+        try:
+            resp = client.text.translate(
+                input=text, source_language_code=source_code,
+                target_language_code=target_code, model=TRANSLATE_MODEL,
+            )
+            out = getattr(resp, "translated_text", None)
+            if out:
+                return out
+        except Exception:
+            pass
+    # Claude fallback (multilingual) — no Sarvam key needed
+    if llm.have_claude():
+        lang = "English" if target_code.startswith("en") else target_code
+        out = llm.complete(
+            f"Translate to {lang}. Output ONLY the translation:\n\n{text}",
+            system="You are a precise translator for Indian languages.", max_tokens=400)
+        if out:
+            return out.strip()
+    return text
 
 
 # ---------------------------------------------------------------------------
 # Text -> speech (containment message)
 # ---------------------------------------------------------------------------
-def speak(text: str, language_code: str = "hi-IN", speaker: str = "Meera") -> str | None:
-    """Return base64 WAV of `text` spoken in `language_code`, or None offline."""
-    client = _get_client()
-    if client is None:
-        return None
+# Microsoft (edge-tts) neural voices per language — FREE, no API key. Fallback
+# for TTS when Sarvam/Bulbul isn't configured.
+EDGE_VOICES = {
+    "hi-IN": "hi-IN-SwaraNeural", "ta-IN": "ta-IN-PallaviNeural",
+    "bn-IN": "bn-IN-TanishaaNeural", "te-IN": "te-IN-ShrutiNeural",
+    "kn-IN": "kn-IN-SapnaNeural", "gu-IN": "gu-IN-DhwaniNeural",
+    "mr-IN": "mr-IN-AarohiNeural", "ml-IN": "ml-IN-SobhanaNeural",
+    "pa-IN": "pa-IN-OjasNeural", "ur-IN": "ur-IN-GulNeural",
+    "en-IN": "en-IN-NeerjaNeural",
+}
+
+
+def _edge_tts(text: str, language_code: str) -> str | None:
+    """Microsoft Edge neural TTS (free) → base64 MP3, or None if unavailable."""
     try:
-        resp = client.text_to_speech.convert(
-            text=text, target_language_code=language_code,
-            speaker=speaker, model=TTS_MODEL,
-        )
-        audios = getattr(resp, "audios", None)
-        return audios[0] if audios else getattr(resp, "audio", None)
+        import asyncio, base64, os, tempfile
+        import edge_tts
     except Exception:
         return None
+    voice = EDGE_VOICES.get(language_code, EDGE_VOICES["en-IN"])
+    fd, path = tempfile.mkstemp(suffix=".mp3")
+    os.close(fd)
+    try:
+        asyncio.run(edge_tts.Communicate(text, voice).save(path))
+        with open(path, "rb") as fh:
+            return base64.b64encode(fh.read()).decode()
+    except Exception:
+        return None
+    finally:
+        try:
+            os.remove(path)
+        except OSError:
+            pass
+
+
+def speak(text: str, language_code: str = "hi-IN", speaker: str = "Meera") -> str | None:
+    """Speak `text` in `language_code` → base64 audio. Sarvam (Bulbul) first, then
+    Microsoft edge-tts (free) fallback, else None. The demo always has a voice."""
+    client = _get_client()
+    if client is not None:
+        try:
+            resp = client.text_to_speech.convert(
+                text=text, target_language_code=language_code,
+                speaker=speaker, model=TTS_MODEL,
+            )
+            audios = getattr(resp, "audios", None)
+            out = audios[0] if audios else getattr(resp, "audio", None)
+            if out:
+                return out
+        except Exception:
+            pass
+    return _edge_tts(text, language_code)
 
 
 # Containment message text per language. Stopping drift is half the solve.
@@ -144,20 +195,27 @@ _FIELDS = ["missing_person_name", "gender", "age_band", "state", "district",
 
 _STRUCT_SYS = (
     "You structure a panicked, possibly code-mixed verbal missing-person report "
-    "into fields for a reunification registry. Use age bands exactly from: "
-    "0-12,13-17,18-40,41-60,61-70,71-80,80+. gender in Male/Female/Unknown. "
-    "Leave a field empty if not stated — never invent. Keep physical_description "
-    "concise and factual (clothing colour, build, marks, aids like stick/glasses)."
+    "into fields for a reunification registry. The report may be in ANY Indian "
+    "language (Tamil, Bhojpuri, Bengali, Maithili, ...) — UNDERSTAND it whatever "
+    "the language. Detect the spoken language and put its English name in "
+    "'language'. Use age bands exactly from: 0-12,13-17,18-40,41-60,61-70,71-80,80+. "
+    "gender in Male/Female/Unknown. Leave a field empty if not stated — never "
+    "invent. Write 'physical_description' in ENGLISH (concise, factual: clothing "
+    "colour, build, marks, aids like stick/glasses) so it matches across languages."
 )
 
 
 def structure_report(transcript: str) -> dict | None:
-    """Claude turns a free-text transcript into the registry fields. Returns a
-    dict (subset of the 16 columns) or None if Claude is unavailable."""
+    """Claude reads a free-text report in ANY language, translates/understands it,
+    and returns the registry fields (description normalised to English). Returns a
+    dict (subset of the 16 columns) or None if Claude is unavailable.
+
+    This is the heart of the voice assistant: a Tamil complaint in → structured,
+    English-normalised missing-person details out, ready for the matcher."""
     if not transcript:
         return None
     user = (
-        f"Transcript:\n\"\"\"{transcript}\"\"\"\n\n"
+        f"Verbal report (any Indian language):\n\"\"\"{transcript}\"\"\"\n\n"
         f"Return JSON with keys: {_FIELDS}."
     )
     return llm.complete_json(user, system=_STRUCT_SYS)

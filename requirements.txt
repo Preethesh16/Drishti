@@ -18,6 +18,8 @@ anthropic>=0.40
 
 # --- Voice: Sarvam AI ASR/TTS/translate for Indian languages (optional) ---
 sarvamai>=0.1
+# Free Microsoft (Edge) neural TTS fallback — no API key needed
+edge-tts>=6.1
 
 # --- Env loading ---
 python-dotenv>=1.0
