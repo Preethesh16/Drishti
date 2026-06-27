@@ -71,6 +71,10 @@
 - [x] C2 Matches tab — top-3 + per-signal reasons + **band coloring** (auto/review/low) + reveal-on-confirm
 - [x] Deploy button hidden + warm theme (`.streamlit/config.toml`)
 - [x] File→match→reveal works end-to-end (demo data re-dated to "now")
+- [x] **Multi-language website** (`drishti/i18n.py`) — 🌐 sidebar switcher translates the
+      whole UI; English/Hindi/Marathi offline, any other language live-translated by Claude
+- [x] **Live conversation voice mode** (ChatGPT-style) — assistant speaks one question at a
+      time in the reporter's language (autoplay), they answer by voice, fields fill turn-by-turn
 - [ ] C4 branding polish (logo/fonts) + record a backup demo video
 
 ## Git / GitHub
