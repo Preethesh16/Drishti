@@ -117,9 +117,9 @@ def build_map(highlight: str | None = None, radius_m: float = DEFAULT_RADIUS_M,
     import folium
 
     pts = load_points(path)
-    center = point_by_name("Ramkund Ghat", path) or pts[0]
-    fmap = folium.Map(location=[center.lat, center.lng], zoom_start=14,
-                      tiles="OpenStreetMap")
+    clat = sum(p.lat for p in pts) / len(pts)
+    clng = sum(p.lng for p in pts) / len(pts)
+    fmap = folium.Map(location=[clat, clng], zoom_start=14, tiles="OpenStreetMap")
 
     alerted = set()
     if highlight:
@@ -148,7 +148,7 @@ def build_map(highlight: str | None = None, radius_m: float = DEFAULT_RADIUS_M,
 if __name__ == "__main__":
     pts = load_points()
     print(f"loaded {len(pts)} points ({len(landmarks())} landmarks, {len(booths())} booths)")
-    demo = "Ramkund Ghat"
+    demo = "Central Plaza"
     payload = broadcast_alert(demo, radius_m=1000)
     print(f"\nEMERGENCY BROADCAST — report near '{demo}', radius 1000m:")
     print(f"  alerts {payload['count']} nearby booths:")

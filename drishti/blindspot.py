@@ -71,8 +71,10 @@ def build_map(top_k: int = 12, path=geo.LANDMARKS_CSV, cctv_path=CCTV_CSV):
     cams = load_cameras(cctv_path)
     ranked = rank_blind_spots(path=path, cctv_path=cctv_path)
     worst = {d["name"] for d in ranked[:top_k]}
-    center = geo.point_by_name("Ramkund Ghat", path) or geo.load_points(path)[0]
-    fmap = folium.Map(location=[center.lat, center.lng], zoom_start=14, tiles="OpenStreetMap")
+    pts = geo.load_points(path)
+    clat = sum(p.lat for p in pts) / len(pts)
+    clng = sum(p.lng for p in pts) / len(pts)
+    fmap = folium.Map(location=[clat, clng], zoom_start=14, tiles="OpenStreetMap")
 
     for clat, clng in cams:
         folium.CircleMarker([clat, clng], radius=3, color="#1c7ed6",

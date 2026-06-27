@@ -66,38 +66,15 @@ tab_file, tab_registry, tab_matches, tab_maps, tab_validation, tab_mesh = st.tab
 # ---------------------------------------------------------------- File (intake)
 with tab_file:
     st.header("Intake — staffed booth, voice-first, any language")
+    st.caption("Nothing here is mandatory. Say or fill in whatever is known.")
     if init_err:
         st.error(f"DB not connected: {init_err}")
     else:
         import base64
         import datetime
         import uuid
-        from drishti import config as C
         from drishti import geo, llm, privacy, voice
         from drishti.ingest import Record
-
-        fork = st.radio("What happened?", ["🔍 Lost someone", "🙋 Found someone"],
-                        horizontal=True)
-
-        # ---- 🎙️ VOICE ASSISTANT: speak any language → transcribe → auto-fill ----
-        st.markdown("##### 🎙️ Voice intake — the reporter just speaks, any language")
-        vcol1, vcol2 = st.columns([3, 1])
-        clip = vcol1.audio_input("Hold to record the report (Tamil, Bhojpuri, …)")
-        engine = ("Sarvam" if voice.have_sarvam() else
-                  "local Whisper (free)" if voice.have_asr() else "unavailable")
-        understand = "Claude" if llm.have_claude() else "built-in heuristics"
-        vcol2.caption(f"ASR: **{engine}**\nUnderstand: **{understand}**")
-        if clip is not None and vcol2.button("🧠 Transcribe & auto-fill",
-                                             use_container_width=True):
-            with st.spinner(f"Listening ({engine}) + understanding ({understand})…"):
-                st.session_state["voice"] = voice.voice_to_fields(clip)
-        v = st.session_state.get("voice") or {}
-        vf = v.get("fields", {}) if v else {}
-        if v.get("transcript"):
-            st.success(f"🗣️ Heard (→ English): “{v['transcript']}”")
-            st.caption(("✅ Claude structured the fields — " if v.get("structured")
-                        else "ℹ️ auto-extracted (set ANTHROPIC_API_KEY for full structuring) — ")
-                       + "review/edit below.")
 
         def _idx(options, value, default=0):
             try:
@@ -105,43 +82,121 @@ with tab_file:
             except (ValueError, AttributeError):
                 return default
 
-        st.caption("Fields (voice-filled when you transcribe; always editable):")
+        def _clean(x):  # drop the "unknown / not set" placeholders
+            return "" if not x or x in ("Unknown", "—") else x
+
+        fork = st.radio("What happened?", ["🔍 Lost someone", "🙋 Found someone"],
+                        horizontal=True)
         langs = list(C.SARVAM_LANG_CODES.keys())
-        c1, c2, c3 = st.columns(3)
-        lang = c1.selectbox("Language", langs, index=_idx(langs, vf.get("language")))
-        gender = c2.selectbox("Gender", ["Unknown", "Male", "Female"],
+        lang = st.selectbox("Reporter's language", langs,
+                            index=_idx(langs, (st.session_state.get("voice") or {})
+                                       .get("fields", {}).get("language")))
+
+        # ---- 🎙️ VOICE ASSISTANT: asks in the reporter's language, then fills ----
+        st.markdown("##### 🎙️ Voice assistant")
+        asr = ("Sarvam" if voice.have_sarvam() else
+               "local Whisper (free)" if voice.have_asr() else "unavailable")
+        brain = "Claude" if llm.have_claude() else "built-in heuristics"
+        a1, a2 = st.columns([1, 1])
+        if a1.button(f"🔊 Ask the questions in {lang}", use_container_width=True):
+            q_en = voice.assistant_prompt()
+            spoken = voice.translate(q_en, target_code=voice.lang_code(lang))
+            st.session_state["ask"] = (spoken, voice.speak(spoken, voice.lang_code(lang)))
+        a2.caption(f"ASR: **{asr}** · Understand: **{brain}**")
+        ask = st.session_state.get("ask")
+        if ask:
+            st.info(f"🗣️ Assistant asks (in {lang}): {ask[0]}")
+            if ask[1]:
+                st.audio(base64.b64decode(ask[1]), format="audio/mp3")
+
+        clip = st.audio_input("🎙️ Record the reporter's answer (kept with the case)")
+        if clip is not None:
+            st.session_state["clip_bytes"] = clip.getvalue()
+            if st.button("🧠 Understand & auto-fill the form"):
+                with st.spinner(f"Listening ({asr}) + understanding ({brain})…"):
+                    st.session_state["voice"] = voice.voice_to_fields(clip)
+        v = st.session_state.get("voice") or {}
+        vf = v.get("fields", {}) if v else {}
+        if v.get("transcript"):
+            st.success(f"🗣️ Heard (→ English): “{v['transcript']}”")
+            st.caption(("✅ Claude structured the fields below — " if v.get("structured")
+                        else "ℹ️ auto-extracted (set ANTHROPIC_API_KEY for full structuring) — ")
+                       + "review/edit; all optional.")
+
+        # ---- the form (voice-filled when you transcribe; everything optional) ----
+        st.markdown("##### 📝 Details (all optional)")
+        r1, r2, r3 = st.columns(3)
+        reporter_name = r1.text_input("Your name", value=vf.get("reporter_name", ""))
+        relation = r2.text_input("Relation to them", value=vf.get("relation", ""),
+                                 placeholder="son, wife, friend…")
+        person_name = r3.text_input("Their name", value=vf.get("missing_person_name", ""))
+
+        g1, g2, g3 = st.columns(3)
+        gender = g1.selectbox("Gender", ["Unknown", "Male", "Female"],
                               index=_idx(["Unknown", "Male", "Female"], vf.get("gender")))
-        age = c3.selectbox("Age band", C.AGE_ORDER, index=_idx(C.AGE_ORDER, vf.get("age_band"), 4))
+        age_opts = ["—"] + C.AGE_ORDER
+        age = g2.selectbox("Age band", age_opts, index=_idx(age_opts, vf.get("age_band")))
         try:
             booth_names = [p.name for p in geo.load_points()]
-            seen_near = st.selectbox("Last seen near (landmark / booth)", booth_names,
+            seen_near = g3.selectbox("Last seen near (booth)", booth_names,
                                      index=_idx(booth_names, vf.get("last_seen_location")))
         except Exception:
-            seen_near = st.text_input("Last seen near (landmark)",
-                                      vf.get("last_seen_location") or "Ramkund Ghat")
-        desc = st.text_area("Description (English-normalised for matching)",
-                            value=vf.get("physical_description", ""),
-                            placeholder="e.g. saffron kurta, walking stick, hard of hearing")
-        with st.expander("Name / phone (optional — most reporters don't know)"):
-            name = st.text_input("Name", value=vf.get("missing_person_name", ""))
-            mobile = st.text_input("Mobile")
+            seen_near = g3.text_input("Last seen near", vf.get("last_seen_location", ""))
 
-        if st.button("✓ File report (prints Case-ID slip)"):
+        h1, h2, h3 = st.columns(3)
+        height = h1.selectbox("Height", ["Unknown", "Tall", "Average", "Short"],
+                              index=_idx(["Unknown", "Tall", "Average", "Short"], vf.get("height")))
+        build = h2.selectbox("Build", ["Unknown", "Thin", "Average", "Heavy"],
+                             index=_idx(["Unknown", "Thin", "Average", "Heavy"], vf.get("build")))
+        complexion = h3.selectbox("Complexion", ["Unknown", "Fair", "Medium", "Dark"],
+                                  index=_idx(["Unknown", "Fair", "Medium", "Dark"], vf.get("complexion")))
+        hr1, hr2 = st.columns(2)
+        hair_len = hr1.selectbox("Hair length", ["Unknown", "Long", "Short", "Bald"],
+                                 index=_idx(["Unknown", "Long", "Short", "Bald"], vf.get("hair_length")))
+        hair_color = hr2.text_input("Hair colour", value=vf.get("hair_color", ""),
+                                    placeholder="black, grey, white…")
+        clothing = st.text_input("What are they wearing?", value=vf.get("clothing", ""),
+                                 placeholder="saffron kurta, blue saree…")
+        marks = st.text_input("Marks / aids", value=vf.get("marks", ""),
+                              placeholder="mole, scar, walking stick, glasses, hard of hearing")
+        notes = st.text_area("Anything else", value="")
+        mobile = st.text_input("Contact mobile (optional)", value="")
+
+        if st.button("✓ File report (prints Case-ID slip)", type="primary"):
             case_id = "KMP-2027-" + uuid.uuid4().hex[:5].upper()
             rtype = "missing" if fork.startswith("🔍") else "found"
+            # compose an English description from the optional appearance fields
+            bits = [b for b in [
+                _clean(height) and f"{height.lower()} height",
+                _clean(build) and f"{build.lower()} build",
+                _clean(hair_len) and f"{hair_len.lower()} hair",
+                _clean(hair_color) and f"{hair_color} hair",
+                _clean(complexion) and f"{complexion.lower()} complexion",
+                _clean(clothing), _clean(marks), _clean(notes),
+            ] if b]
+            desc = ", ".join(bits) or vf.get("physical_description", "")
+            rep = "; ".join(b for b in [
+                reporter_name and f"reporter: {reporter_name}",
+                relation and f"relation: {relation}"] if b)
             rec = Record(
                 case_id=case_id,
                 reported_at=datetime.datetime.now().isoformat(timespec="minutes"),
-                gender=gender, age_band=age, state="", district="", language=lang,
+                gender=gender, age_band=_clean(age), state="", district="", language=lang,
                 last_seen_location=seen_near, reporting_center="Booth Intake",
                 physical_description=desc, status="Pending",
-                name_hash=privacy.hash_pii(name), mobile_hash=privacy.hash_pii(mobile),
-                vault_id=case_id, report_type=rtype)
+                name_hash=privacy.hash_pii(person_name), mobile_hash=privacy.hash_pii(mobile),
+                remarks=rep, vault_id=case_id, report_type=rtype)
             try:
-                api.file_report(rec, name=name or None, mobile=mobile or None)
+                api.file_report(rec, name=person_name or None, mobile=mobile or None)
                 st.success(f"Filed **{case_id}** → registry + vault. Slip printed.")
             except Exception as e:
                 st.error(f"Persist failed: {e}")
+            # keep the voice recording with the case (gitignored, PII-bearing)
+            if st.session_state.get("clip_bytes"):
+                d = C.ROOT / "data" / "voice_clips"
+                d.mkdir(parents=True, exist_ok=True)
+                (d / f"{case_id}.wav").write_bytes(st.session_state["clip_bytes"])
+                st.caption(f"🎙️ Voice recording saved with {case_id}.")
             # emergency broadcast to nearby booths (person may have drifted)
             try:
                 payload = geo.broadcast_alert(seen_near, radius_m=1000)
@@ -150,13 +205,11 @@ with tab_file:
                            + ", ".join(b["name"] for b in payload["alerted_booths"][:8]))
             except Exception:
                 pass
-            # found-flow: speak the "stay here" containment message in their language
             if rtype == "found":
                 txt, audio = voice.containment_message(lang)
                 st.info(f"🔊 Spoken to the found person in {lang}: “{txt}”")
                 if audio:
                     st.audio(base64.b64decode(audio), format="audio/mp3")
-            # instant retroactive match against the open pool
             try:
                 ms = api.find_matches(case_id, top_k=3)
                 if ms:

@@ -1,51 +1,51 @@
 name,lat,lng,type
-Ramkund Ghat,19.9975,73.7898,landmark
-Kalaram Mandir,19.9986,73.7889,landmark
-Kapaleshwar Mandir,19.9969,73.7905,landmark
-Sundarnarayan Temple,19.9958,73.7878,landmark
-Tapovan Sangam,20.0086,73.8047,landmark
-Sadhugram Camp,20.005,73.8005,landmark
-CBS Bus Stand,19.9975,73.786,landmark
-Panchavati Karyalay,19.999,73.7892,landmark
-Someshwar,20.0123,73.7456,landmark
-Trimbak Naka,19.9905,73.766,landmark
-Nashik Road Station,19.9457,73.8377,landmark
-Dwarka Circle,19.9846,73.7945,landmark
-Gadge Maharaj Bridge,19.9963,73.7882,landmark
-Mukti Dham,19.9447,73.8312,landmark
-North Gate,19.988,73.78,booth
-North Hall,19.988,73.7848,booth
-North Sangam,19.988,73.7896,booth
-North Transit,19.988,73.7944,booth
-North Watch,19.988,73.7992,booth
-West Hall,19.988,73.804,booth
-West Gate,19.9925,73.78,booth
-West Ghat Walk,19.9925,73.7848,booth
-West Seva Booth,19.9925,73.7896,booth
-West Food Court,19.9925,73.7944,booth
-East Hall,19.9925,73.7992,booth
-East Gate,19.9925,73.804,booth
-East Ghat Walk,19.997,73.78,booth
-East Akhara Camp,19.997,73.7848,booth
-East Help Post,19.997,73.7896,booth
-South Gate,19.997,73.7944,booth
-South Hall,19.997,73.7992,booth
-South Transit,19.997,73.804,booth
-South Parking Cross,20.0015,73.78,booth
-South Watch,20.0015,73.7848,booth
-Central Plaza,20.0015,73.7896,booth
-Central Bhajan Hall,20.0015,73.7944,booth
-Central Annakshetra,20.0015,73.7992,booth
-Central Help Hall,20.0015,73.804,booth
-Banana Point,20.006,73.78,booth
-River Walk,20.006,73.7848,booth
-Dharamshala Block,20.006,73.7896,booth
-Loudspeaker Post,20.006,73.7944,booth
-Snan Ghat 1,20.006,73.7992,booth
-Snan Ghat 2,20.006,73.804,booth
-Snan Ghat 3,20.0105,73.78,booth
-Sangam Gate,20.0105,73.7848,booth
-Akhara Camp 2,20.0105,73.7896,booth
-Transit Point,20.0105,73.7944,booth
-Parking Belt,20.0105,73.7992,booth
-Outer Camp,20.0105,73.804,booth
+North Gate,19.985,73.779,booth
+North Hall,19.985,73.7829,booth
+North Sangam,19.985,73.7868,booth
+North Transit,19.985,73.7907,booth
+North Watch,19.985,73.7946,booth
+North Camp,19.985,73.7985,booth
+North Food Court,19.985,73.8024,booth
+North Parking,19.985,73.8063,booth
+West Gate,19.9895,73.779,booth
+West Hall,19.9895,73.7829,booth
+West Ghat Walk,19.9895,73.7868,booth
+West Seva Booth,19.9895,73.7907,booth
+Riverside West,19.9895,73.7946,booth
+West Akhara,19.9895,73.7985,booth
+West Medical Post,19.9895,73.8024,booth
+West Help Hall,19.9895,73.8063,booth
+Central Plaza,19.994,73.779,booth
+Central Bhajan Hall,19.994,73.7829,booth
+Central Annakshetra,19.994,73.7868,booth
+Central Help Hall,19.994,73.7907,booth
+Central Watch Tower,19.994,73.7946,booth
+Banana Point,19.994,73.7985,booth
+Loudspeaker Post,19.994,73.8024,booth
+Volunteer Tent,19.994,73.8063,booth
+East Gate,19.9985,73.779,booth
+East Hall,19.9985,73.7829,booth
+East Ghat Walk,19.9985,73.7868,booth
+East Akhara Camp,19.9985,73.7907,booth
+Riverside East,19.9985,73.7946,booth
+East Help Post,19.9985,73.7985,booth
+East Food Court,19.9985,73.8024,booth
+East Transit,19.9985,73.8063,booth
+South Gate,20.003,73.779,booth
+South Hall,20.003,73.7829,booth
+South Transit,20.003,73.7868,booth
+South Parking Cross,20.003,73.7907,booth
+South Watch,20.003,73.7946,booth
+South Camp,20.003,73.7985,booth
+South Belt,20.003,73.8024,booth
+South Medical Post,20.003,73.8063,booth
+Snan Ghat 1,20.0075,73.779,booth
+Snan Ghat 2,20.0075,73.7829,booth
+Snan Ghat 3,20.0075,73.7868,booth
+Sangam Gate,20.0075,73.7907,booth
+Outer Camp,20.0075,73.7946,booth
+Transit Point,20.0075,73.7985,booth
+Parking Belt,20.0075,73.8024,booth
+Dharamshala Block,20.0075,73.8063,booth
+Mukti Naka,20.012,73.779,booth
+Saptashrungi Stand,20.012,73.7829,booth

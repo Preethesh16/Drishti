@@ -1,0 +1,14 @@
+# Hide the Deploy button + dev menu (operator booth UI, not a dev tool).
+[client]
+toolbarMode = "minimal"
+
+[browser]
+gatherUsageStats = false
+
+# Calm, warm, trustworthy booth palette.
+[theme]
+primaryColor = "#e8590c"
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#fff4e6"
+textColor = "#1a1a1a"
+font = "sans serif"

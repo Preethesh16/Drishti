@@ -251,19 +251,38 @@ def containment_message(language_name: str) -> tuple[str, str | None]:
 # ---------------------------------------------------------------------------
 # Speech transcript -> structured 16 fields (Claude is the brain)
 # ---------------------------------------------------------------------------
-_FIELDS = ["missing_person_name", "gender", "age_band", "state", "district",
-           "language", "last_seen_location", "physical_description"]
+_FIELDS = ["missing_person_name", "reporter_name", "relation", "gender", "age_band",
+           "height", "build", "hair_length", "hair_color", "complexion",
+           "clothing", "marks", "language", "last_seen_location", "physical_description"]
 
 _STRUCT_SYS = (
     "You structure a panicked, possibly code-mixed verbal missing-person report "
     "into fields for a reunification registry. The report may be in ANY Indian "
-    "language (Tamil, Bhojpuri, Bengali, Maithili, ...) — UNDERSTAND it whatever "
-    "the language. Detect the spoken language and put its English name in "
-    "'language'. Use age bands exactly from: 0-12,13-17,18-40,41-60,61-70,71-80,80+. "
-    "gender in Male/Female/Unknown. Leave a field empty if not stated — never "
-    "invent. Write 'physical_description' in ENGLISH (concise, factual: clothing "
-    "colour, build, marks, aids like stick/glasses) so it matches across languages."
+    "language (Tamil, Bhojpuri, Bengali, Maithili, ...) — UNDERSTAND it whatever the "
+    "language. Detect the spoken language → its English name in 'language'. "
+    "NOTHING is mandatory: leave any field as \"\" if not stated — NEVER invent. "
+    "Allowed values: gender ∈ Male/Female/Unknown; age_band ∈ "
+    "0-12,13-17,18-40,41-60,61-70,71-80,80+; height ∈ Tall/Average/Short; "
+    "build ∈ Thin/Average/Heavy; hair_length ∈ Long/Short/Bald; "
+    "complexion ∈ Fair/Medium/Dark. 'reporter_name' = who is reporting; "
+    "'relation' = their relation to the missing person (son, wife, ...); "
+    "'missing_person_name' = the lost person; 'clothing' = what they are wearing; "
+    "'marks' = scars/moles/aids (stick, glasses, hearing). Write "
+    "'physical_description' as a concise ENGLISH summary of the visual attributes "
+    "(height, build, hair, complexion, clothing, marks) so it matches across languages."
 )
+
+
+def assistant_prompt() -> str:
+    """The question the voice assistant asks the reporter (spoken in their language)."""
+    return (
+        "Namaste. I am here to help you find them. Please tell me whatever you know — "
+        "nothing is compulsory. Your name and your relation to them. The missing "
+        "person's name, their age and whether they are male or female. Are they tall, "
+        "average, or short; thin or heavy; long or short hair and its colour; their "
+        "skin tone. What clothes are they wearing, and any marks, scars, glasses, or a "
+        "walking stick. And the nearest booth or landmark where you last saw them."
+    )
 
 
 def structure_report(transcript: str) -> dict | None:

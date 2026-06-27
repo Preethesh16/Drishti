@@ -1,11 +1,11 @@
-"""Generate Nashik Kumbh landmarks + a ~500m booth grid on REAL coordinates.
+"""Generate 50 Nashik Kumbh help-booth pin-points on a ~500m grid (real coords),
+plus a CCTV layout (dense core, sparse edges) for the blind-spot map.
 
-Writes data/nashik_landmarks.csv (name, lat, lng, type). 'landmark' = a real,
-recognisable spot people report against ("near Ramkund"); 'booth' = a staffed
-help-booth on a ~500m grid so every reporter is within ~500m of one. Stand-in
-until official zone/KML geometry lands; coordinates are real Nashik locations.
+Booths are the only pins — every reporter is within ~500m of one, and each has a
+readable name so people can report "near West Hall". No hardcoded landmarks.
 
-Run:  python scripts/make_nashik_geo.py [--force]
+Writes data/nashik_landmarks.csv (name, lat, lng, type='booth') and
+data/nashik_cctv.csv (camera_id, lat, lng).  Run: python scripts/make_nashik_geo.py [--force]
 """
 from __future__ import annotations
 
@@ -19,104 +19,83 @@ OUT = ROOT / "data" / "nashik_landmarks.csv"
 CCTV_OUT = ROOT / "data" / "nashik_cctv.csv"
 _rng = random.Random(73)
 
-# Real, recognisable Nashik Kumbh landmarks (people report "near <these>").
-LANDMARKS = [
-    ("Ramkund Ghat", 19.9975, 73.7898),
-    ("Kalaram Mandir", 19.9986, 73.7889),
-    ("Kapaleshwar Mandir", 19.9969, 73.7905),
-    ("Sundarnarayan Temple", 19.9958, 73.7878),
-    ("Tapovan Sangam", 20.0086, 73.8047),
-    ("Sadhugram Camp", 20.0050, 73.8005),
-    ("CBS Bus Stand", 19.9975, 73.7860),
-    ("Panchavati Karyalay", 19.9990, 73.7892),
-    ("Someshwar", 20.0123, 73.7456),
-    ("Trimbak Naka", 19.9905, 73.7660),
-    ("Nashik Road Station", 19.9457, 73.8377),
-    ("Dwarka Circle", 19.9846, 73.7945),
-    ("Gadge Maharaj Bridge", 19.9963, 73.7882),
-    ("Mukti Dham", 19.9447, 73.8312),
-]
+# ~500m grid over the Panchavati/Ramkund core (real Nashik coordinates).
+LAT0, DLAT, NROWS = 19.9850, 0.0045, 7      # ~500m steps
+LNG0, DLNG, NCOLS = 73.7790, 0.0039, 8
+N_BOOTHS = 50
 
-# Friendly, directional booth names so reporters can say "near West Hall".
+# 50 readable booth names so reporters can say "near <name>".
 BOOTH_NAMES = [
     "North Gate", "North Hall", "North Sangam", "North Transit", "North Watch",
-    "West Hall", "West Gate", "West Ghat Walk", "West Seva Booth", "West Food Court",
-    "East Hall", "East Gate", "East Ghat Walk", "East Akhara Camp", "East Help Post",
-    "South Gate", "South Hall", "South Transit", "South Parking Cross", "South Watch",
+    "North Camp", "North Food Court", "North Parking",
+    "West Gate", "West Hall", "West Ghat Walk", "West Seva Booth", "Riverside West",
+    "West Akhara", "West Medical Post", "West Help Hall",
     "Central Plaza", "Central Bhajan Hall", "Central Annakshetra", "Central Help Hall",
-    "Banana Point", "River Walk", "Dharamshala Block", "Loudspeaker Post",
-    "Snan Ghat 1", "Snan Ghat 2", "Snan Ghat 3", "Sangam Gate", "Akhara Camp 2",
-    "Transit Point", "Parking Belt", "Outer Camp", "Volunteer Tent", "Medical Post",
+    "Central Watch Tower", "Banana Point", "Loudspeaker Post", "Volunteer Tent",
+    "East Gate", "East Hall", "East Ghat Walk", "East Akhara Camp", "Riverside East",
+    "East Help Post", "East Food Court", "East Transit",
+    "South Gate", "South Hall", "South Transit", "South Parking Cross", "South Watch",
+    "South Camp", "South Belt", "South Medical Post",
+    "Snan Ghat 1", "Snan Ghat 2", "Snan Ghat 3", "Sangam Gate", "Outer Camp",
+    "Transit Point", "Parking Belt", "Dharamshala Block", "Mukti Naka", "Saptashrungi Stand",
 ]
 
-# ~500m booth grid over the Panchavati/Ramkund core.
-# 500m ≈ 0.0045° lat, ≈ 0.0048° lng at this latitude.
-LAT0, LAT1, DLAT = 19.9880, 20.0125, 0.0045
-LNG0, LNG1, DLNG = 73.7800, 73.8060, 0.0048
 
-
-def grid_points():
+def grid():
     pts = []
-    lat = LAT0
-    while lat <= LAT1 + 1e-9:
-        lng = LNG0
-        while lng <= LNG1 + 1e-9:
-            pts.append((round(lat, 5), round(lng, 5)))
-            lng += DLNG
-        lat += DLAT
-    return pts
+    for r in range(NROWS):
+        for c in range(NCOLS):
+            pts.append((round(LAT0 + r * DLAT, 5), round(LNG0 + c * DLNG, 5)))
+    return pts[:N_BOOTHS]
 
 
-def main(force=False):
+def write_booths(force=False):
     if OUT.exists() and not force:
         print(f"!! {OUT.name} exists — not clobbering. Use --force.")
-        return
+        return None
     OUT.parent.mkdir(exist_ok=True)
-    rows = [{"name": n, "lat": la, "lng": lo, "type": "landmark"} for n, la, lo in LANDMARKS]
-
-    pts = grid_points()
+    pts = grid()
+    rows = []
     for i, (la, lo) in enumerate(pts):
-        if i < len(BOOTH_NAMES):
-            name = BOOTH_NAMES[i]
-        else:
-            name = f"Sector {chr(65 + i // 6)}{i % 6 + 1} Booth"
+        name = BOOTH_NAMES[i] if i < len(BOOTH_NAMES) else f"Booth {i + 1:02d}"
         rows.append({"name": name, "lat": la, "lng": lo, "type": "booth"})
-
     with open(OUT, "w", newline="", encoding="utf-8") as fh:
         w = csv.DictWriter(fh, fieldnames=["name", "lat", "lng", "type"])
         w.writeheader()
         w.writerows(rows)
-    n_booth = sum(1 for r in rows if r["type"] == "booth")
-    print(f"wrote {len(rows)} points ({len(LANDMARKS)} landmarks + {n_booth} booths "
-          f"on ~500m grid) -> {OUT}")
-    write_cctv(force)
+    print(f"wrote {len(rows)} booth pin-points (~500m grid) -> {OUT}")
+    return rows
 
 
-def write_cctv(force=False):
-    """CCTV cameras: DENSE clusters at major landmarks, SPARSE at the edges — so
-    blind spots (high crowd pressure × few cameras) emerge for blindspot.py."""
+def write_cctv(booths, force=False):
+    """Cameras: DENSE around the central booths, SPARSE at the edges → blind spots emerge."""
     if CCTV_OUT.exists() and not force:
         return
-    # cameras cluster around the busy temple/ghat core; transit edges stay thin
-    HOT = ["Ramkund Ghat", "Kalaram Mandir", "Kapaleshwar Mandir", "Tapovan Sangam",
-           "Panchavati Karyalay", "CBS Bus Stand"]
+    # central booths = the dense-camera core; edges stay thin
+    clat = sum(b["lat"] for b in booths) / len(booths)
+    clng = sum(b["lng"] for b in booths) / len(booths)
+    core = sorted(booths, key=lambda b: (b["lat"] - clat) ** 2 + (b["lng"] - clng) ** 2)[:6]
     cams, cid = [], 0
-    by_name = {n: (la, lo) for n, la, lo in LANDMARKS}
-    for n in HOT:
-        la, lo = by_name[n]
-        for _ in range(_rng.randint(7, 11)):          # dense cluster (~150m)
+    for b in core:
+        for _ in range(_rng.randint(7, 11)):
             cid += 1
-            cams.append((f"CAM{cid:04d}", round(la + _rng.uniform(-0.0014, 0.0014), 6),
-                         round(lo + _rng.uniform(-0.0014, 0.0014), 6)))
-    for _ in range(18):                                # a few sparse outer cameras
+            cams.append((f"CAM{cid:04d}", round(b["lat"] + _rng.uniform(-0.0014, 0.0014), 6),
+                         round(b["lng"] + _rng.uniform(-0.0014, 0.0014), 6)))
+    for _ in range(16):                     # a few sparse outer cameras
         cid += 1
-        cams.append((f"CAM{cid:04d}", round(_rng.uniform(19.985, 20.012), 6),
-                     round(_rng.uniform(73.780, 73.806), 6)))
+        cams.append((f"CAM{cid:04d}", round(_rng.uniform(LAT0, LAT0 + NROWS * DLAT), 6),
+                     round(_rng.uniform(LNG0, LNG0 + NCOLS * DLNG), 6)))
     with open(CCTV_OUT, "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
         w.writerow(["camera_id", "lat", "lng"])
         w.writerows(cams)
     print(f"wrote {len(cams)} CCTV cameras (dense core, sparse edges) -> {CCTV_OUT}")
+
+
+def main(force=False):
+    booths = write_booths(force)
+    if booths:
+        write_cctv(booths, force)
 
 
 if __name__ == "__main__":

@@ -35,5 +35,8 @@ registry.db
 # Streamlit
 .streamlit/secrets.toml
 
+# Recorded voice clips (PII-bearing audio — never commit)
+data/voice_clips/
+
 # Claude local (keep settings.local.json out of shared history if you prefer; we keep it)
 # .claude/settings.local.json

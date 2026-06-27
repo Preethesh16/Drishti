@@ -24,11 +24,18 @@ SPEED = {"elderly": 1.0, "child": 1.4, "adult": 1.8}
 SPREAD = {"elderly": 0.7, "child": 0.5, "adult": 1.1}
 # words that hint a point is an EXIT/transit (adults head here)
 EXIT_WORDS = ("gate", "transit", "parking", "cross", "belt", "outer", "station", "naka", "stand")
+# words that hint a calm gathering anchor (confused elderly drift toward these)
+ANCHOR_WORDS = ("ghat", "sangam", "plaza", "hall", "bhajan", "annakshetra", "ghat walk", "watch")
 
 
 def _is_exit(name: str) -> bool:
     n = name.lower()
     return any(w in n for w in EXIT_WORDS)
+
+
+def _is_anchor(name: str) -> bool:
+    n = name.lower()
+    return any(w in n for w in ANCHOR_WORDS)
 
 
 def predict(last_seen: str, elapsed_hours: float, profile: str = "elderly",
@@ -52,8 +59,8 @@ def predict(last_seen: str, elapsed_hours: float, profile: str = "elderly",
             continue
         base = math.exp(-((d / sigma) ** 2))       # gaussian falloff with distance
         boost = 1.0
-        if profile == "elderly" and p.type == "landmark":
-            boost = 1.8                            # anchor-seeking toward big landmarks
+        if profile == "elderly" and _is_anchor(p.name):
+            boost = 1.8                            # anchor-seeking toward calm gathering points
         elif profile == "adult" and _is_exit(p.name):
             boost = 1.7                            # heading for an exit
         elif profile == "child":
@@ -69,6 +76,6 @@ def predict(last_seen: str, elapsed_hours: float, profile: str = "elderly",
 
 if __name__ == "__main__":
     for prof in ("elderly", "child", "adult"):
-        print(f"\n{prof.upper()} last seen 'Ramkund Ghat', missing 2h → search:")
-        for z in predict("Ramkund Ghat", 2.0, prof, top_k=5):
+        print(f"\n{prof.upper()} last seen 'Central Plaza', missing 2h → search:")
+        for z in predict("Central Plaza", 2.0, prof, top_k=5):
             print(f"  {z['probability']*100:4.0f}%  {z['name']:<22} ({z['distance_m']}m, {z['type']})")
