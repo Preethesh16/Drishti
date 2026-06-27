@@ -71,26 +71,57 @@ with tab_file:
         import datetime
         import uuid
         from drishti import config as C
-        from drishti import geo, privacy, voice
+        from drishti import geo, llm, privacy, voice
         from drishti.ingest import Record
 
         fork = st.radio("What happened?", ["🔍 Lost someone", "🙋 Found someone"],
                         horizontal=True)
-        st.caption("Operator holds to speak; the report may be in ANY language "
-                   "(Tamil, Bhojpuri…) — Claude translates it and fills the fields.")
+
+        # ---- 🎙️ VOICE ASSISTANT: speak any language → transcribe → auto-fill ----
+        st.markdown("##### 🎙️ Voice intake — the reporter just speaks, any language")
+        vcol1, vcol2 = st.columns([3, 1])
+        clip = vcol1.audio_input("Hold to record the report (Tamil, Bhojpuri, …)")
+        engine = ("Sarvam" if voice.have_sarvam() else
+                  "local Whisper (free)" if voice.have_asr() else "unavailable")
+        understand = "Claude" if llm.have_claude() else "built-in heuristics"
+        vcol2.caption(f"ASR: **{engine}**\nUnderstand: **{understand}**")
+        if clip is not None and vcol2.button("🧠 Transcribe & auto-fill",
+                                             use_container_width=True):
+            with st.spinner(f"Listening ({engine}) + understanding ({understand})…"):
+                st.session_state["voice"] = voice.voice_to_fields(clip)
+        v = st.session_state.get("voice") or {}
+        vf = v.get("fields", {}) if v else {}
+        if v.get("transcript"):
+            st.success(f"🗣️ Heard (→ English): “{v['transcript']}”")
+            st.caption(("✅ Claude structured the fields — " if v.get("structured")
+                        else "ℹ️ auto-extracted (set ANTHROPIC_API_KEY for full structuring) — ")
+                       + "review/edit below.")
+
+        def _idx(options, value, default=0):
+            try:
+                return options.index(value)
+            except (ValueError, AttributeError):
+                return default
+
+        st.caption("Fields (voice-filled when you transcribe; always editable):")
+        langs = list(C.SARVAM_LANG_CODES.keys())
         c1, c2, c3 = st.columns(3)
-        lang = c1.selectbox("Language", list(C.SARVAM_LANG_CODES.keys()))
-        gender = c2.selectbox("Gender", ["Unknown", "Male", "Female"])
-        age = c3.selectbox("Age band", C.AGE_ORDER, index=4)
+        lang = c1.selectbox("Language", langs, index=_idx(langs, vf.get("language")))
+        gender = c2.selectbox("Gender", ["Unknown", "Male", "Female"],
+                              index=_idx(["Unknown", "Male", "Female"], vf.get("gender")))
+        age = c3.selectbox("Age band", C.AGE_ORDER, index=_idx(C.AGE_ORDER, vf.get("age_band"), 4))
         try:
-            seen_near = st.selectbox("Last seen near (landmark / booth)",
-                                     [p.name for p in geo.load_points()])
+            booth_names = [p.name for p in geo.load_points()]
+            seen_near = st.selectbox("Last seen near (landmark / booth)", booth_names,
+                                     index=_idx(booth_names, vf.get("last_seen_location")))
         except Exception:
-            seen_near = st.text_input("Last seen near (landmark)", "Ramkund Ghat")
-        desc = st.text_area("Description (operator speaks; any language)",
+            seen_near = st.text_input("Last seen near (landmark)",
+                                      vf.get("last_seen_location") or "Ramkund Ghat")
+        desc = st.text_area("Description (English-normalised for matching)",
+                            value=vf.get("physical_description", ""),
                             placeholder="e.g. saffron kurta, walking stick, hard of hearing")
         with st.expander("Name / phone (optional — most reporters don't know)"):
-            name = st.text_input("Name")
+            name = st.text_input("Name", value=vf.get("missing_person_name", ""))
             mobile = st.text_input("Mobile")
 
         if st.button("✓ File report (prints Case-ID slip)"):

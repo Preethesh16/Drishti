@@ -49,37 +49,98 @@ def lang_code(language_name: str) -> str:
 
 
 # ---------------------------------------------------------------------------
-# Speech -> text
+# Speech -> text   (Sarvam → free local Whisper → None)
 # ---------------------------------------------------------------------------
-def transcribe(audio_file, language_code: str | None = None) -> str | None:
-    """Transcribe speech in its original language. `audio_file` is a file object
-    or path. Returns transcript text, or None if Sarvam is unavailable."""
-    client = _get_client()
-    if client is None:
-        return None
+# faster-whisper: free, local, no API key. "base" balances CPU speed vs Indian-
+# language accuracy; it auto-downloads (~145MB) on first use and is then cached.
+WHISPER_MODEL_SIZE = "base"
+_whisper_model = None
+
+
+def _get_whisper():
+    global _whisper_model
+    if _whisper_model is not None:
+        return _whisper_model
     try:
-        fh = open(audio_file, "rb") if isinstance(audio_file, str) else audio_file
-        resp = client.speech_to_text.transcribe(
-            file=fh, model=ASR_MODEL, language_code=language_code or "unknown",
-        )
-        return getattr(resp, "transcript", None) or getattr(resp, "text", None)
+        from faster_whisper import WhisperModel
+        _whisper_model = WhisperModel(WHISPER_MODEL_SIZE, device="cpu", compute_type="int8")
+    except Exception:
+        _whisper_model = None
+    return _whisper_model
+
+
+def have_asr() -> bool:
+    """True if ANY speech-to-text path is available (Sarvam key or local Whisper)."""
+    return have_sarvam() or _get_whisper() is not None
+
+
+def _to_temp_wav(audio) -> tuple[str, bool]:
+    """Materialise a path from a path / bytes / file-like. Returns (path, is_temp)."""
+    import os
+    import tempfile
+    if isinstance(audio, str):
+        return audio, False
+    data = audio.read() if hasattr(audio, "read") else audio
+    fd, path = tempfile.mkstemp(suffix=".wav")
+    os.close(fd)
+    with open(path, "wb") as fh:
+        fh.write(data)
+    return path, True
+
+
+def transcribe_local(audio, translate: bool = True) -> str | None:
+    """Free local Whisper. translate=True → output English. Returns text or None."""
+    model = _get_whisper()
+    if model is None:
+        return None
+    import os
+    path, is_temp = _to_temp_wav(audio)
+    try:
+        segs, _info = model.transcribe(path, task="translate" if translate else "transcribe")
+        text = " ".join(s.text for s in segs).strip()
+        return text or None
     except Exception:
         return None
+    finally:
+        if is_temp:
+            try:
+                os.remove(path)
+            except OSError:
+                pass
+
+
+def transcribe(audio_file, language_code: str | None = None) -> str | None:
+    """Transcribe speech in its original language. Sarvam → local Whisper → None."""
+    client = _get_client()
+    if client is not None:
+        try:
+            path, is_temp = _to_temp_wav(audio_file)
+            with open(path, "rb") as fh:
+                resp = client.speech_to_text.transcribe(
+                    file=fh, model=ASR_MODEL, language_code=language_code or "unknown")
+            out = getattr(resp, "transcript", None) or getattr(resp, "text", None)
+            if out:
+                return out
+        except Exception:
+            pass
+    return transcribe_local(audio_file, translate=False)
 
 
 def transcribe_to_english(audio_file) -> str | None:
-    """Auto-detect + transcribe + TRANSLATE to English in one call. This is the
-    pivot-translate-at-ingest trick: store an English-normalised description so
-    even the OFFLINE matcher compares across languages."""
+    """Auto-detect + transcribe + TRANSLATE to English. Sarvam → local Whisper → None.
+    Pivot-translate at ingest so even the OFFLINE matcher is cross-lingual."""
     client = _get_client()
-    if client is None:
-        return None
-    try:
-        fh = open(audio_file, "rb") if isinstance(audio_file, str) else audio_file
-        resp = client.speech_to_text.translate(file=fh, model=ASR_MODEL)
-        return getattr(resp, "transcript", None) or getattr(resp, "text", None)
-    except Exception:
-        return None
+    if client is not None:
+        try:
+            path, is_temp = _to_temp_wav(audio_file)
+            with open(path, "rb") as fh:
+                resp = client.speech_to_text.translate(file=fh, model=ASR_MODEL)
+            out = getattr(resp, "transcript", None) or getattr(resp, "text", None)
+            if out:
+                return out
+        except Exception:
+            pass
+    return transcribe_local(audio_file, translate=True)
 
 
 # ---------------------------------------------------------------------------
@@ -219,6 +280,45 @@ def structure_report(transcript: str) -> dict | None:
         f"Return JSON with keys: {_FIELDS}."
     )
     return llm.complete_json(user, system=_STRUCT_SYS)
+
+
+def _heuristic_fields(text: str) -> dict:
+    """No-Claude fallback: pull a few obvious fields from English text so the
+    voice demo still autofills something useful without an Anthropic key."""
+    import re
+    t = (text or "").lower()
+    out = {"physical_description": (text or "").strip()}
+    fem = re.search(r"\b(woman|women|mother|wife|girl|daughter|sister|lady|aunt|"
+                    r"grandmother|she|her)\b", t)
+    male = re.search(r"\b(man|men|father|husband|boy|son|brother|uncle|"
+                     r"grandfather|he|his)\b", t)
+    if male and not fem:
+        out["gender"] = "Male"
+    elif fem and not male:
+        out["gender"] = "Female"
+    m = re.search(r"\b(\d{1,3})\s*(years|year|yr|saal)?\b", t)
+    if m:
+        age = int(m.group(1))
+        bands = [(12, "0-12"), (17, "13-17"), (40, "18-40"), (60, "41-60"),
+                 (70, "61-70"), (80, "71-80"), (200, "80+")]
+        out["age_band"] = next(b for hi, b in bands if age <= hi)
+    return out
+
+
+def voice_to_fields(audio) -> dict:
+    """THE voice-assistant entrypoint for the website: speech (any language) →
+    English transcript → structured missing-person fields. `audio` is bytes /
+    path / file-like (e.g. Streamlit st.audio_input). Always returns a dict:
+        {transcript, fields, asr, structured}
+    degrading gracefully (Sarvam → Whisper for ASR; Claude → heuristic for fields)."""
+    transcript = transcribe_to_english(audio)
+    if not transcript:
+        return {"transcript": None, "fields": {}, "asr": False, "structured": False}
+    fields = structure_report(transcript)
+    if fields:
+        return {"transcript": transcript, "fields": fields, "asr": True, "structured": True}
+    return {"transcript": transcript, "fields": _heuristic_fields(transcript),
+            "asr": True, "structured": False}
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ Run:  python scripts/make_demo_data.py [--force]
 from __future__ import annotations
 
 import csv
+import datetime
 import random
 import sys
 from pathlib import Path
@@ -17,6 +18,16 @@ ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "Synthetic_Missing_Persons_2500.csv"
 
 rng = random.Random(2027)
+
+# Reports are dated within the last ~60h ("snan-day surge") so a freshly-filed
+# "now" report lands inside the matcher's ±72h time window — File→match→reveal works.
+_NOW = datetime.datetime.now()
+
+
+def recent_dt(rng, max_hours_ago=60):
+    t = _NOW - datetime.timedelta(hours=rng.uniform(0.5, max_hours_ago),
+                                  minutes=rng.uniform(0, 59))
+    return t.strftime("%Y-%m-%d %H:%M")
 
 COLUMNS = ["case_id", "reported_at", "missing_person_name", "gender", "age_band",
            "state", "district", "language", "last_seen_location", "reporting_center",
@@ -110,7 +121,7 @@ def main(force=False):
         name = "" if rng.random() < 0.15 else rng.choice(NAMES)
         p = {
             "case_id": f"KS{i:05d}",
-            "reported_at": f"2027-08-{rng.randint(10, 30):02d} {rng.randint(6,21):02d}:{rng.randint(0,59):02d}",
+            "reported_at": recent_dt(rng),
             "missing_person_name": name,
             "gender": gender,
             "age_band": rng.choice(AGE_BANDS),
@@ -139,7 +150,7 @@ def main(force=False):
         loc = src["last_seen_location"] if rng.random() < 0.6 else rng.choice(LOCATIONS)
         rows.append({
             "case_id": f"KS9{k:04d}",
-            "reported_at": f"2027-08-{rng.randint(10, 30):02d} {rng.randint(6,21):02d}:{rng.randint(0,59):02d}",
+            "reported_at": recent_dt(rng),
             "missing_person_name": "",                      # second reporter rarely has the name
             "gender": src["gender"],
             "age_band": age,

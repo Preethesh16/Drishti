@@ -20,6 +20,8 @@ anthropic>=0.40
 sarvamai>=0.1
 # Free Microsoft (Edge) neural TTS fallback — no API key needed
 edge-tts>=6.1
+# Free LOCAL speech-to-text fallback (no key) — used when SARVAM_API_KEY is absent
+faster-whisper>=1.0
 
 # --- Env loading ---
 python-dotenv>=1.0
