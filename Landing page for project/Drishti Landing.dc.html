@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&amp;display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { margin: 0; font-family: 'Inter', system-ui, -apple-system, sans-serif; background:#fff; color:#18181b; line-height:1.6; overflow-x:hidden; }
+    @keyframes drishtiSlideDown { from { transform: translateY(-80px); opacity:0; } to { transform:none; opacity:1; } }
+    @keyframes drishtiFadeUp { from { transform: translateY(22px); opacity:0; } to { transform:none; opacity:1; } }
+    @keyframes drishtiPulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.4;transform:scale(1.5)} }
+  </style>
+</helmet>
+
+<div style="font-family:'Inter',system-ui,sans-serif;color:#18181b;">
+
+  <!-- NAV -->
+  <nav ref="{{ navRef }}" aria-label="Main navigation" style="position:fixed; top:0; left:0; right:0; z-index:100; display:flex; align-items:center; justify-content:space-between; padding:0 clamp(1.5rem,5vw,4rem); height:68px; transition:background .3s, box-shadow .3s; animation:drishtiSlideDown .6s cubic-bezier(.22,1,.36,1) both;">
+    <a href="#" aria-label="Drishti home" style="display:flex; align-items:center; gap:10px; text-decoration:none;">
+      <div aria-hidden="true" style="width:36px; height:36px; border-radius:10px; background:linear-gradient(135deg,#FF6B35,#FFA500); display:flex; align-items:center; justify-content:center; box-shadow:0 2px 10px rgba(255,107,53,.4); flex-shrink:0; font-size:20px;">🪔</div>
+      <span style="font-size:1.2rem; font-weight:800; letter-spacing:-.5px; background:linear-gradient(135deg,#FF6B35,#FFA500); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">Drishti</span>
+    </a>
+    <ul style="display:flex; align-items:center; gap:2rem; list-style:none; margin:0; padding:0;" data-hide-mobile="1">
+      <li><a href="#problem" style="font-size:.9rem; font-weight:500; color:#18181b; text-decoration:none;" style-hover="color:#FF6B35;">The Problem</a></li>
+      <li><a href="#features" style="font-size:.9rem; font-weight:500; color:#18181b; text-decoration:none;" style-hover="color:#FF6B35;">How It Works</a></li>
+      <li><a href="#proof" style="font-size:.9rem; font-weight:500; color:#18181b; text-decoration:none;" style-hover="color:#FF6B35;">The Proof</a></li>
+    </ul>
+    <button style="padding:.5rem 1.25rem; border-radius:50px; border:none; cursor:pointer; font-family:inherit; font-size:.875rem; font-weight:700; background:linear-gradient(135deg,#FF6B35,#FFA500); color:#fff; box-shadow:0 2px 12px rgba(255,107,53,.3); transition:transform .2s, box-shadow .2s;" style-hover="transform:scale(1.05); box-shadow:0 8px 32px rgba(255,107,53,.38);">+Report</button>
+  </nav>
+
+  <main>
+
+    <!-- HERO -->
+    <section id="hero" style="min-height:100vh; background:linear-gradient(160deg,#fff8f5 0%,#fff2e6 45%,#fffaf2 100%); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:8rem 1.5rem 0; overflow:hidden; position:relative;">
+      <div style="display:inline-flex; align-items:center; gap:8px; padding:6px 16px; border-radius:50px; background:rgba(255,107,53,.10); border:1px solid rgba(255,107,53,.22); font-size:.78rem; font-weight:700; color:#FF6B35; text-transform:uppercase; letter-spacing:.06em; margin-bottom:1.5rem;">
+        <span aria-hidden="true" style="width:7px; height:7px; border-radius:50%; background:#FF6B35; animation:drishtiPulse 2s infinite;"></span> Nashik Kumbh Mela 2027 · Claude Impact Lab
+      </div>
+      <h1 style="font-size:clamp(2.6rem,8vw,5.2rem); font-weight:900; line-height:1.06; letter-spacing:-2.5px; max-width:880px; margin:0 0 1.5rem;">Reunite the <span style="background:linear-gradient(135deg,#FF6B35,#FFA500); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">missing</span><br>without surveilling anyone</h1>
+      <p style="font-size:clamp(1rem,2.5vw,1.2rem); color:#52525b; max-width:600px; margin:0 auto 2.5rem; line-height:1.78;">One shared, live, de-identified registry that connects the two halves of every search — the family looking and the person found — across centers that today can't see each other, in any language, on weak data. No face scans. No GPS tracking.</p>
+      <div style="display:flex; justify-content:center;">
+        <button style="display:inline-flex; align-items:center; gap:.6rem; padding:1rem 2.4rem; border-radius:50px; border:none; cursor:pointer; font-family:inherit; font-size:1.05rem; font-weight:700; background:linear-gradient(135deg,#FF6B35,#FFA500); color:#fff; box-shadow:0 8px 32px rgba(255,107,53,.38); transition:transform .2s, box-shadow .2s;" style-hover="transform:translateY(-3px) scale(1.03); box-shadow:0 18px 50px rgba(255,107,53,.45);"><span aria-hidden="true" style="font-size:1.25em; font-weight:800; line-height:1;">+</span> Report the Missing Person <span aria-hidden="true" style="font-size:1.15em;">→</span></button>
+      </div>
+      <div aria-label="Key statistics" style="display:flex; gap:2.5rem; justify-content:center; flex-wrap:wrap; margin-top:3.5rem;">
+        <div><div style="font-size:2rem; font-weight:900; letter-spacing:-1px; background:linear-gradient(135deg,#FF6B35,#FFA500); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">~10</div><div style="font-size:.78rem; color:#52525b; font-weight:500; margin-top:3px;">Centers Unified</div></div>
+        <div><div style="font-size:2rem; font-weight:900; letter-spacing:-1px; background:linear-gradient(135deg,#FF6B35,#FFA500); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">202</div><div style="font-size:.78rem; color:#52525b; font-weight:500; margin-top:3px;">Real Validation Rows</div></div>
+        <div><div style="font-size:2rem; font-weight:900; letter-spacing:-1px; background:linear-gradient(135deg,#FF6B35,#FFA500); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">0</div><div style="font-size:.78rem; color:#52525b; font-weight:500; margin-top:3px;">Faces Scanned</div></div>
+        <div><div style="font-size:2rem; font-weight:900; letter-spacing:-1px; background:linear-gradient(135deg,#FF6B35,#FFA500); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">Offline</div><div style="font-size:.78rem; color:#52525b; font-weight:500; margin-top:3px;">Core Matcher Runs</div></div>
+      </div>
+      <div aria-hidden="true" style="width:100%; overflow:hidden; line-height:0; margin-top:auto;">
+        <svg viewBox="0 0 1440 80" preserveAspectRatio="none" style="display:block; width:100%;"><path d="M0,40 C240,80 480,0 720,40 C960,80 1200,0 1440,40 L1440,80 L0,80 Z" fill="#18181b"></path></svg>
+      </div>
+    </section>
+
+    <!-- PROBLEM -->
+    <section id="problem" style="background:#18181b; position:relative; overflow:hidden; padding:clamp(4rem,8vw,7rem) 0;">
+      <div style="position:absolute; top:-30%; left:-15%; width:500px; height:500px; border-radius:50%; background:radial-gradient(circle,rgba(255,107,53,.07) 0%,transparent 70%); pointer-events:none;"></div>
+      <div style="max-width:1160px; margin:0 auto; padding:0 clamp(1.5rem,5vw,3rem); position:relative;">
+        <p data-rev="1" style="font-size:.78rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#FF6B35; margin-bottom:1rem;">The Challenge</p>
+        <h2 data-rev="1" data-rev-delay=".1s" style="font-size:clamp(1.8rem,4.5vw,2.8rem); font-weight:800; letter-spacing:-1px; line-height:1.15; margin-bottom:1rem; color:#fff;">Ten centers.<br><span style="color:#FFA500;">None of them can see each other.</span></h2>
+        <p data-rev="1" data-rev-delay=".2s" style="font-size:1.05rem; color:rgba(255,255,255,.58); line-height:1.82; max-width:640px; margin-bottom:3rem;">A person <em>found</em> at Center B is invisible to a family <em>searching</em> at Center A. The lost person is often elderly or a child, non-literate, panicking, doesn't speak the local language — and usually cannot identify themselves. Names and phone numbers are missing or useless. The two halves of every search never meet.</p>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1.25rem;">
+          <div data-rev="1" data-rev-delay=".1s" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:1.75rem; transition:background .3s, border-color .3s, transform .3s;" style-hover="background:rgba(255,107,53,.09); border-color:rgba(255,107,53,.28); transform:translateY(-5px);">
+            <div style="font-size:2.25rem; font-weight:900; letter-spacing:-1.5px; margin-bottom:.5rem; background:linear-gradient(135deg,#FF6B35,#FFA500); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">Silos</div>
+            <div style="font-size:1rem; font-weight:700; color:#fff; margin-bottom:.4rem;">Disconnected Centers</div>
+            <p style="font-size:.875rem; color:rgba(255,255,255,.5); line-height:1.65; margin:0;">Each lost-and-found camp keeps its own paper or local list. A match sitting across the grounds stays unseen for hours or days.</p>
+          </div>
+          <div data-rev="1" data-rev-delay=".2s" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:1.75rem; transition:background .3s, border-color .3s, transform .3s;" style-hover="background:rgba(255,107,53,.09); border-color:rgba(255,107,53,.28); transform:translateY(-5px);">
+            <div style="font-size:2.25rem; font-weight:900; letter-spacing:-1.5px; margin-bottom:.5rem; background:linear-gradient(135deg,#FF6B35,#FFA500); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">No ID</div>
+            <div style="font-size:1rem; font-weight:700; color:#fff; margin-bottom:.4rem;">Weak Signals Only</div>
+            <p style="font-size:.875rem; color:rgba(255,255,255,.5); line-height:1.65; margin:0;">The lost person can't give a name or number. All you have is age, gender, language, location and a physical description — described differently by everyone.</p>
+          </div>
+          <div data-rev="1" data-rev-delay=".3s" style="background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.08); border-radius:16px; padding:1.75rem; transition:background .3s, border-color .3s, transform .3s;" style-hover="background:rgba(255,107,53,.09); border-color:rgba(255,107,53,.28); transform:translateY(-5px);">
+            <div style="font-size:2.25rem; font-weight:900; letter-spacing:-1.5px; margin-bottom:.5rem; background:linear-gradient(135deg,#FF6B35,#FFA500); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">Many langs</div>
+            <div style="font-size:1rem; font-weight:700; color:#fff; margin-bottom:.4rem;">Across Languages</div>
+            <p style="font-size:.875rem; color:rgba(255,255,255,.5); line-height:1.65; margin:0;">"Saffron saree, rudraksha" and "orange clothes, prayer beads" describe the same person — but no rule-based system connects them.</p>
+          </div>
+        </div>
+      </div>
+      <div aria-hidden="true" style="width:100%; overflow:hidden; line-height:0;">
+        <svg viewBox="0 0 1440 80" preserveAspectRatio="none" style="display:block; width:100%;"><path d="M0,40 C240,0 480,80 720,40 C960,0 1200,80 1440,40 L1440,80 L0,80 Z" fill="#ffffff"></path></svg>
+      </div>
+    </section>
+
+    <!-- FEATURES -->
+    <section id="features" style="background:#fff; padding:clamp(4rem,8vw,7rem) 0;">
+      <div style="max-width:1160px; margin:0 auto; padding:0 clamp(1.5rem,5vw,3rem);">
+        <p data-rev="1" style="font-size:.78rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#FF6B35; margin-bottom:1rem;">Our Solution</p>
+        <h2 data-rev="1" data-rev-delay=".1s" style="font-size:clamp(1.8rem,4.5vw,2.8rem); font-weight:800; letter-spacing:-1px; line-height:1.15; margin-bottom:1rem;">Match the reports,<br>not the people</h2>
+        <p data-rev="1" data-rev-delay=".2s" style="font-size:1.05rem; color:#52525b; max-width:580px; line-height:1.75;">Claude is the brain. Privacy is structural. The whole thing runs offline. Three ideas that work together so no one is surveilled and no match is ever missed.</p>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:1.5rem; margin-top:3.5rem;">
+
+          <div data-rev="1" data-rev-delay=".1s" style="background:#fafafa; border:1.5px solid rgba(0,0,0,.06); border-radius:16px; padding:2rem; transition:transform .28s cubic-bezier(.22,1,.36,1), box-shadow .28s, border-color .28s, background .28s;" style-hover="transform:translateY(-7px); box-shadow:0 16px 52px rgba(0,0,0,.14); border-color:rgba(255,107,53,.22); background:#fff;">
+            <div aria-hidden="true" style="width:52px; height:52px; border-radius:14px; background:rgba(255,107,53,.10); display:flex; align-items:center; justify-content:center; margin-bottom:1.25rem;">
+              <svg viewBox="0 0 24 24" style="width:24px; height:24px; stroke:#FF6B35; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 8 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H2a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 3.6 8a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H8a1.65 1.65 0 0 0 1-1.51V2a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V8a1.65 1.65 0 0 0 1.51 1H22a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+            </div>
+            <div style="font-size:1.1rem; font-weight:700; margin-bottom:.5rem;">Claude Cross-Lingual Matching</div>
+            <p style="font-size:.9rem; color:#52525b; line-height:1.72; margin:0;">Claude structures voice intake and matches descriptions across languages — "saffron saree, rudraksha" ↔ "orange clothes, prayer beads" — and explains every match it proposes, so an operator can trust it.</p>
+            <span style="display:inline-block; margin-top:1rem; padding:4px 12px; border-radius:50px; font-size:.72rem; font-weight:700; background:rgba(255,107,53,.10); color:#FF6B35; text-transform:uppercase; letter-spacing:.05em;">The Brain</span>
+          </div>
+
+          <div data-rev="1" data-rev-delay=".2s" style="background:#fafafa; border:1.5px solid rgba(0,0,0,.06); border-radius:16px; padding:2rem; transition:transform .28s cubic-bezier(.22,1,.36,1), box-shadow .28s, border-color .28s, background .28s;" style-hover="transform:translateY(-7px); box-shadow:0 16px 52px rgba(0,0,0,.14); border-color:rgba(255,107,53,.22); background:#fff;">
+            <div aria-hidden="true" style="width:52px; height:52px; border-radius:14px; background:rgba(255,107,53,.10); display:flex; align-items:center; justify-content:center; margin-bottom:1.25rem;">
+              <svg viewBox="0 0 24 24" style="width:24px; height:24px; stroke:#FF6B35; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;"><rect x="3" y="11" width="18" height="11" rx="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>
+            </div>
+            <div style="font-size:1.1rem; font-weight:700; margin-bottom:.5rem;">Privacy That's Structural</div>
+            <p style="font-size:.9rem; color:#52525b; line-height:1.72; margin:0;">Name and mobile are hashed at ingest. Matching is blind. Real identity is revealed only at a human-confirmed reunion, with an audit log — and raw PII is purged afterward. Privacy is in the architecture, not a checkbox.</p>
+            <span style="display:inline-block; margin-top:1rem; padding:4px 12px; border-radius:50px; font-size:.72rem; font-weight:700; background:rgba(255,107,53,.10); color:#FF6B35; text-transform:uppercase; letter-spacing:.05em;">Reveal on Confirm</span>
+          </div>
+
+          <div data-rev="1" data-rev-delay=".3s" style="background:#fafafa; border:1.5px solid rgba(0,0,0,.06); border-radius:16px; padding:2rem; transition:transform .28s cubic-bezier(.22,1,.36,1), box-shadow .28s, border-color .28s, background .28s;" style-hover="transform:translateY(-7px); box-shadow:0 16px 52px rgba(0,0,0,.14); border-color:rgba(255,107,53,.22); background:#fff;">
+            <div aria-hidden="true" style="width:52px; height:52px; border-radius:14px; background:rgba(255,107,53,.10); display:flex; align-items:center; justify-content:center; margin-bottom:1.25rem;">
+              <svg viewBox="0 0 24 24" style="width:24px; height:24px; stroke:#FF6B35; fill:none; stroke-width:2; stroke-linecap:round; stroke-linejoin:round;"><path d="M1 1l22 22"></path><path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.55"></path><path d="M5 12.55a10.94 10.94 0 0 1 5.17-2.39"></path><path d="M10.71 5.05A16 16 0 0 1 22.58 9"></path><path d="M1.42 9a15.91 15.91 0 0 1 4.7-2.88"></path><path d="M8.53 16.11a6 6 0 0 1 6.95 0"></path><line x1="12" y1="20" x2="12.01" y2="20"></line></svg>
+            </div>
+            <div style="font-size:1.1rem; font-weight:700; margin-bottom:.5rem;">Offline-First, No GPU</div>
+            <p style="font-size:.9rem; color:#52525b; line-height:1.72; margin:0;">The core matcher and the validation number run with pandas and the standard library only — no network, no API key, no GPU. Capture never blocks on the network, so intake works on weak data and dead zones.</p>
+            <span style="display:inline-block; margin-top:1rem; padding:4px 12px; border-radius:50px; font-size:.72rem; font-weight:700; background:rgba(255,107,53,.10); color:#FF6B35; text-transform:uppercase; letter-spacing:.05em;">Runs Anywhere</span>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- WHAT WE DON'T DO -->
+    <section id="boundary" style="background:#fff7f3; padding:clamp(4rem,8vw,7rem) 0;">
+      <div style="max-width:1160px; margin:0 auto; padding:0 clamp(1.5rem,5vw,3rem);">
+        <p data-rev="1" style="font-size:.78rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#FF6B35; margin-bottom:1rem;">The Honest Boundary</p>
+        <h2 data-rev="1" data-rev-delay=".1s" style="font-size:clamp(1.8rem,4.5vw,2.8rem); font-weight:800; letter-spacing:-1px; line-height:1.15; margin-bottom:1rem;">What we deliberately<br>do <span style="color:#FF6B35;">not</span> do</h2>
+        <p data-rev="1" data-rev-delay=".2s" style="font-size:1.05rem; color:#52525b; max-width:600px; line-height:1.75;">We don't track the person and we don't scan faces. A human always brings them to a help point — we just make that fast. Owning this boundary is the honest, senior position.</p>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(300px,1fr)); gap:1.5rem; margin-top:3rem;">
+          <div data-rev="1" data-rev-delay=".1s" style="background:#fff; border-radius:20px; padding:2rem; box-shadow:0 4px 24px rgba(0,0,0,.10); border:1px solid rgba(255,107,53,.07); transition:transform .28s cubic-bezier(.22,1,.36,1), box-shadow .28s;" style-hover="transform:translateY(-7px); box-shadow:0 16px 52px rgba(0,0,0,.14);">
+            <div style="font-size:1.4rem; margin-bottom:.75rem;">🚫</div>
+            <div style="font-size:1.05rem; font-weight:700; margin-bottom:.5rem;">No facial recognition</div>
+            <p style="font-size:.93rem; color:#52525b; line-height:1.78; margin:0;">The CCTV input is coordinates only — no footage, no faces. We predict <em>where to look</em>, never who is who.</p>
+          </div>
+          <div data-rev="1" data-rev-delay=".2s" style="background:#fff; border-radius:20px; padding:2rem; box-shadow:0 4px 24px rgba(0,0,0,.10); border:1px solid rgba(255,107,53,.07); transition:transform .28s cubic-bezier(.22,1,.36,1), box-shadow .28s;" style-hover="transform:translateY(-7px); box-shadow:0 16px 52px rgba(0,0,0,.14);">
+            <div style="font-size:1.4rem; margin-bottom:.75rem;">📍</div>
+            <div style="font-size:1.05rem; font-weight:700; margin-bottom:.5rem;">No GPS tracking</div>
+            <p style="font-size:.93rem; color:#52525b; line-height:1.78; margin:0;">The lost person carries no device. We match <em>reports</em> about them, not a live location feed.</p>
+          </div>
+          <div data-rev="1" data-rev-delay=".3s" style="background:#fff; border-radius:20px; padding:2rem; box-shadow:0 4px 24px rgba(0,0,0,.10); border:1px solid rgba(255,107,53,.07); transition:transform .28s cubic-bezier(.22,1,.36,1), box-shadow .28s;" style-hover="transform:translateY(-7px); box-shadow:0 16px 52px rgba(0,0,0,.14);">
+            <div style="font-size:1.4rem; margin-bottom:.75rem;">🤝</div>
+            <div style="font-size:1.05rem; font-weight:700; margin-bottom:.5rem;">A human always confirms</div>
+            <p style="font-size:.93rem; color:#52525b; line-height:1.78; margin:0;">Identity is revealed only at a confirmed reunion. A blind-spot map places help where separations cluster.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- THE PROOF -->
+    <section id="proof" style="background:#fff; padding:clamp(4rem,8vw,7rem) 0;">
+      <div style="max-width:1160px; margin:0 auto; padding:0 clamp(1.5rem,5vw,3rem);">
+        <p data-rev="1" style="font-size:.78rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#FF6B35; margin-bottom:1rem;">The Number That Proves It</p>
+        <h2 data-rev="1" data-rev-delay=".1s" style="font-size:clamp(1.8rem,4.5vw,2.8rem); font-weight:800; letter-spacing:-1px; line-height:1.15; margin-bottom:1rem;">A real metric,<br>not a demo</h2>
+        <p data-rev="1" data-rev-delay=".2s" style="font-size:1.05rem; color:#52525b; max-width:600px; line-height:1.75;">Almost no team brings a real number. <code style="background:#fff2e6; padding:1px 6px; border-radius:5px; font-size:.92em;">validate.py</code> runs offline in seconds against 202 real duplicate-report rows and synthetic recovered pairs — reporting recall and the discrimination gap.</p>
+        <div data-rev="1" data-rev-delay=".25s" style="margin-top:2.5rem; background:#18181b; border-radius:16px; padding:1.75rem 2rem; font-family:'SFMono-Regular',Menlo,Consolas,monospace; color:#fafafa; overflow-x:auto; box-shadow:0 16px 52px rgba(0,0,0,.18);">
+          <div style="color:rgba(255,255,255,.4); font-size:.8rem; margin-bottom:.75rem;"># run THE NUMBER, offline, in seconds</div>
+          <div style="font-size:.95rem; line-height:1.9;"><span style="color:#FFA500;">$</span> python -m drishti.ingest <span style="color:rgba(255,255,255,.45);"># → "seeded 2500 records"</span></div>
+          <div style="font-size:.95rem; line-height:1.9;"><span style="color:#FFA500;">$</span> python -m drishti.validate <span style="color:rgba(255,255,255,.45);"># → THE NUMBER</span></div>
+          <div style="font-size:.95rem; line-height:1.9;"><span style="color:#FFA500;">$</span> streamlit run app/dashboard.py <span style="color:rgba(255,255,255,.45);"># → operator UI</span></div>
+        </div>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(170px,1fr)); gap:1.25rem; margin-top:2rem;">
+          <div data-rev="1" data-rev-delay=".1s" style="background:#fafafa; border:1.5px solid rgba(0,0,0,.06); border-radius:16px; padding:1.5rem;">
+            <div style="font-size:1.8rem; font-weight:900; letter-spacing:-1px; background:linear-gradient(135deg,#FF6B35,#FFA500); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">Method A</div>
+            <p style="font-size:.875rem; color:#52525b; line-height:1.65; margin:.4rem 0 0;">Recall measured against the 202 real <code>is_duplicate_report</code> rows.</p>
+          </div>
+          <div data-rev="1" data-rev-delay=".2s" style="background:#fafafa; border:1.5px solid rgba(0,0,0,.06); border-radius:16px; padding:1.5rem;">
+            <div style="font-size:1.8rem; font-weight:900; letter-spacing:-1px; background:linear-gradient(135deg,#FF6B35,#FFA500); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">Method B</div>
+            <p style="font-size:.875rem; color:#52525b; line-height:1.65; margin:.4rem 0 0;">Discrimination gap on synthetic recovered pairs.</p>
+          </div>
+          <div data-rev="1" data-rev-delay=".3s" style="background:#fafafa; border:1.5px solid rgba(0,0,0,.06); border-radius:16px; padding:1.5rem;">
+            <div style="font-size:1.8rem; font-weight:900; letter-spacing:-1px; background:linear-gradient(135deg,#FF6B35,#FFA500); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">Seconds</div>
+            <p style="font-size:.875rem; color:#52525b; line-height:1.65; margin:.4rem 0 0;">No network, no API key, no GPU. The differentiator.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS / ARCHITECTURE -->
+    <section id="how" style="background:#fff7f3; padding:clamp(4rem,8vw,7rem) 0;">
+      <div style="max-width:1160px; margin:0 auto; padding:0 clamp(1.5rem,5vw,3rem);">
+        <p data-rev="1" style="font-size:.78rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase; color:#FF6B35; margin-bottom:1rem;">Architecture · One Screen</p>
+        <h2 data-rev="1" data-rev-delay=".1s" style="font-size:clamp(1.8rem,4.5vw,2.8rem); font-weight:800; letter-spacing:-1px; line-height:1.15; margin-bottom:1rem;">From a lost report<br>to a confirmed reunion</h2>
+        <p data-rev="1" data-rev-delay=".2s" style="font-size:1.05rem; color:#52525b; max-width:600px; line-height:1.75;">Voice-first intake feeds one shared registry. Intelligence runs on top. A human always closes the loop.</p>
+        <div style="display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:2rem; margin-top:3.5rem;">
+          <div data-rev="1" data-rev-delay=".1s" style="text-align:center;">
+            <div style="width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#FF6B35,#FFA500); color:#fff; font-size:1.3rem; font-weight:900; display:flex; align-items:center; justify-content:center; margin:0 auto 1.25rem; box-shadow:0 8px 32px rgba(255,107,53,.38);">1</div>
+            <div style="font-size:1rem; font-weight:700; margin-bottom:.5rem;">Intake</div>
+            <p style="font-size:.875rem; color:#52525b; line-height:1.65; margin:0;">An operator asks "Lost someone?" or "Found someone?" Voice-first, landmark-based. Name and mobile are hashed the moment they're captured.</p>
+          </div>
+          <div data-rev="1" data-rev-delay=".2s" style="text-align:center;">
+            <div style="width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#FF6B35,#FFA500); color:#fff; font-size:1.3rem; font-weight:900; display:flex; align-items:center; justify-content:center; margin:0 auto 1.25rem; box-shadow:0 8px 32px rgba(255,107,53,.38);">2</div>
+            <div style="font-size:1rem; font-weight:700; margin-bottom:.5rem;">The Registry</div>
+            <p style="font-size:.875rem; color:#52525b; line-height:1.65; margin:0;">One shared, live, de-identified pool. Every report — old or new, from any center — lands here and breaks the silos.</p>
+          </div>
+          <div data-rev="1" data-rev-delay=".3s" style="text-align:center;">
+            <div style="width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#FF6B35,#FFA500); color:#fff; font-size:1.3rem; font-weight:900; display:flex; align-items:center; justify-content:center; margin:0 auto 1.25rem; box-shadow:0 8px 32px rgba(255,107,53,.38);">3</div>
+            <div style="font-size:1rem; font-weight:700; margin-bottom:.5rem;">Intelligence</div>
+            <p style="font-size:.875rem; color:#52525b; line-height:1.65; margin:0;">Tier-1 offline rules plus Tier-2 Claude cross-lingual matching, a drift predictor for where to search, and a blind-spot map for where to place help.</p>
+          </div>
+          <div data-rev="1" data-rev-delay=".4s" style="text-align:center;">
+            <div style="width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#FF6B35,#FFA500); color:#fff; font-size:1.3rem; font-weight:900; display:flex; align-items:center; justify-content:center; margin:0 auto 1.25rem; box-shadow:0 8px 32px rgba(255,107,53,.38);">4</div>
+            <div style="font-size:1rem; font-weight:700; margin-bottom:.5rem;">Reunite</div>
+            <p style="font-size:.875rem; color:#52525b; line-height:1.65; margin:0;">A targeted alert reaches the nearest help point. A human confirms the match — only then is identity revealed, and the raw PII is purged.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section id="cta" style="padding:clamp(5rem,10vw,9rem) 1.5rem; text-align:center; background:linear-gradient(135deg,#FF6B35 0%,#FFA500 100%); position:relative; overflow:hidden;">
+      <div style="position:absolute; top:-50%; left:-10%; width:600px; height:600px; border-radius:50%; background:rgba(255,255,255,.07); pointer-events:none;"></div>
+      <div style="position:absolute; bottom:-40%; right:-5%; width:400px; height:400px; border-radius:50%; background:rgba(255,255,255,.04); pointer-events:none;"></div>
+      <h2 data-rev="1" style="font-size:clamp(2rem,5vw,3.5rem); font-weight:900; color:#fff; letter-spacing:-1.5px; line-height:1.1; margin-bottom:1rem; position:relative; z-index:1;">Connect the two halves<br>of every search</h2>
+      <p data-rev="1" data-rev-delay=".1s" style="font-size:1.1rem; color:rgba(255,255,255,.85); max-width:560px; margin:0 auto 2.5rem; line-height:1.72; position:relative; z-index:1;">Built for the Claude Impact Lab, Mumbai 2026. Open source, offline-first, and designed so no one is ever surveilled.</p>
+      <div data-rev="1" data-rev-delay=".2s" style="position:relative; z-index:1;"><button style="padding:1rem 2.25rem; border-radius:50px; border:none; cursor:pointer; font-family:inherit; font-size:1.05rem; font-weight:700; background:#fff; color:#FF6B35; box-shadow:0 8px 32px rgba(0,0,0,.15); transition:transform .2s, box-shadow .2s;" style-hover="transform:translateY(-3px) scale(1.04); box-shadow:0 20px 60px rgba(0,0,0,.22);">ReportMissing</button></div>
+      <p data-rev="1" data-rev-delay=".3s" style="font-size:.8rem; color:rgba(255,255,255,.65); margin-top:1rem; position:relative; z-index:1;">No face scans · No GPS tracking · Runs offline</p>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer style="background:#18181b; padding:3rem clamp(1.5rem,5vw,4rem);">
+    <div style="max-width:1160px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1.5rem;">
+      <div style="display:flex; align-items:center; gap:10px;">
+        <div aria-hidden="true" style="width:32px; height:32px; border-radius:9px; background:linear-gradient(135deg,#FF6B35,#FFA500); display:flex; align-items:center; justify-content:center; font-size:17px;">🪔</div>
+        <span style="font-size:1rem; font-weight:800; color:#fff; background:linear-gradient(135deg,#FF6B35,#FFA500); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent;">Drishti</span>
+      </div>
+      <nav aria-label="Footer navigation">
+        <ul style="display:flex; gap:1.5rem; flex-wrap:wrap; list-style:none; margin:0; padding:0;">
+          <li><a href="#problem" style="font-size:.825rem; color:rgba(255,255,255,.4); text-decoration:none;" style-hover="color:#FF6B35;">The Problem</a></li>
+          <li><a href="#features" style="font-size:.825rem; color:rgba(255,255,255,.4); text-decoration:none;" style-hover="color:#FF6B35;">How It Works</a></li>
+          <li><a href="#proof" style="font-size:.825rem; color:rgba(255,255,255,.4); text-decoration:none;" style-hover="color:#FF6B35;">The Proof</a></li>
+          <li><a href="#cta" style="font-size:.825rem; color:rgba(255,255,255,.4); text-decoration:none;" style-hover="color:#FF6B35;">GitHub</a></li>
+        </ul>
+      </nav>
+    </div>
+    <div style="max-width:1160px; margin:2rem auto 0; border-top:1px solid rgba(255,255,255,.08); padding-top:1.5rem; display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:1rem;">
+      <p style="font-size:.8rem; color:rgba(255,255,255,.35); margin:0;">© 2026 Drishti · Claude Impact Lab, Mumbai 2026</p>
+      <p style="font-size:.8rem; color:rgba(255,255,255,.28); margin:0;">Made with <span style="color:#FF6B35;">♥</span> for the Nashik Kumbh Mela 2027</p>
+    </div>
+  </footer>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  componentDidMount() {
+    const root = this.el || document;
+    // Sticky nav
+    const nav = this.navRef;
+    const onScroll = () => {
+      if (!nav) return;
+      if (window.scrollY > 40) {
+        nav.style.background = 'rgba(255,255,255,.94)';
+        nav.style.backdropFilter = 'blur(14px)';
+        nav.style.webkitBackdropFilter = 'blur(14px)';
+        nav.style.boxShadow = '0 1px 6px rgba(0,0,0,.08)';
+      } else {
+        nav.style.background = '';
+        nav.style.backdropFilter = '';
+        nav.style.webkitBackdropFilter = '';
+        nav.style.boxShadow = '';
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    document.addEventListener('scroll', onScroll, true); // catch container scrolls
+    this._onScroll = onScroll;
+    onScroll();
+
+    // Scroll reveal — additive only; content is visible by default in markup.
+    const scope = (root && root.querySelectorAll) ? root : document;
+    const revEls = scope.querySelectorAll('[data-rev]');
+    const reveal = (el) => { el.style.opacity = '1'; el.style.transform = 'none'; };
+    revEls.forEach((el) => {
+      el.style.opacity = '0';
+      el.style.transform = 'translateY(28px)';
+      el.style.transition = 'opacity .65s cubic-bezier(.22,1,.36,1), transform .65s cubic-bezier(.22,1,.36,1)';
+      const d = el.getAttribute('data-rev-delay');
+      if (d) el.style.transitionDelay = d;
+    });
+    let io = null;
+    try {
+      io = new IntersectionObserver((entries) => {
+        entries.forEach((e) => {
+          if (e.isIntersecting) { reveal(e.target); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.08, rootMargin: '0px 0px -40px 0px' });
+      revEls.forEach((el) => io.observe(el));
+      this._io = io;
+    } catch (err) { /* no IO support */ }
+
+    // Fallback: guarantee everything becomes visible even if the observer
+    // never fires (e.g. scaled preview / scroll-in-container runtimes).
+    this._fallback = setTimeout(() => {
+      revEls.forEach((el) => { if (el.style.opacity !== '1') reveal(el); });
+    }, 1400);
+  }
+  componentWillUnmount() {
+    if (this._onScroll) { window.removeEventListener('scroll', this._onScroll); document.removeEventListener('scroll', this._onScroll, true); }
+    if (this._io) this._io.disconnect();
+    if (this._fallback) clearTimeout(this._fallback);
+  }
+  renderVals() {
+    return { navRef: (n) => { this.navRef = n; if (!this.el && n) this.el = n.closest('div') || document; } };
+  }
+}
+</script>
+</body>
+</html>

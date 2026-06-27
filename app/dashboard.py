@@ -1,26 +1,504 @@
-"""Operator dashboard — Streamlit.  [PERSON C owns the design; PERSON B wired the DB]
+"""Operator dashboard — Streamlit.  [PERSON C owns this file]
 
-Tabs: File · Registry · Matches · Maps · Validation · (Mesh)
-Now connected to the LIVE backend: every tab reads/writes the shared registry.db
-+ access-controlled drishti_vault.db through `drishti.api` — no CSV, no direct SQLite.
-On first launch it auto-seeds (real CSV if present in data/, else a small demo set),
-so the DB connection works the instant you run it. Run:  streamlit run app/dashboard.py
-
-Design north star (PERSON C): a panicking, non-literate reporter is served by a
-VOLUNTEER. Calm, big-type, voice-first, two big forks: "Lost someone?" /
-"Found someone?". Judges should SEE the silos merging, a cross-lingual match with
-a human-readable reason, and the reveal-on-confirm privacy moment.
+Landing page → "Register Missing" → File tab (operator intake).
+Run:  streamlit run app/dashboard.py
 """
 from __future__ import annotations
+import sys
+import os
+
+# Ensure project root is on sys.path so `drishti` is importable regardless
+# of how streamlit is launched (it adds app/ by default, not the root).
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 import streamlit as st
 
+st.set_page_config(page_title="Drishti", page_icon="🪔", layout="wide")
+
+# ── query-param router: HTML links use ?navigate=app / ?navigate=landing ──────
+_nav = st.query_params.get("navigate", "")
+if _nav in ("app", "landing"):
+    st.session_state.page = _nav
+    st.query_params.clear()
+    st.rerun()
+
+if "page" not in st.session_state:
+    st.session_state.page = "landing"
+
+# ── global theme CSS (landing + app share the same palette) ───────────────────
+st.markdown("""
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+  html, body, [class*="css"] { font-family: 'Inter', system-ui, sans-serif; }
+
+  .cta-btn {
+    display: inline-flex; align-items: center; gap: .6rem;
+    padding: .9rem 2.2rem; border-radius: 50px; text-decoration: none;
+    font-size: 1.05rem; font-weight: 700;
+    background: linear-gradient(135deg,#FF6B35,#FFA500); color: #fff !important;
+    box-shadow: 0 8px 32px rgba(255,107,53,.38);
+    transition: transform .2s, box-shadow .2s;
+  }
+  .cta-btn:hover { transform: translateY(-3px) scale(1.03); color:#fff !important; }
+  .cta-btn-white { background: #fff !important; color: #FF6B35 !important; }
+  .cta-btn-white:hover { color: #FF6B35 !important; }
+
+  /* app: primary buttons */
+  .stButton > button[kind="primary"] {
+    background: linear-gradient(135deg,#FF6B35,#FFA500) !important;
+    border: none !important; border-radius: 50px !important;
+    font-weight: 700 !important; color: #fff !important;
+    box-shadow: 0 4px 16px rgba(255,107,53,.35) !important;
+  }
+  /* app: active tab */
+  [data-testid="stTabs"] [role="tab"][aria-selected="true"] {
+    color: #FF6B35 !important; border-bottom-color: #FF6B35 !important; font-weight:700 !important;
+  }
+  [data-testid="stMetricValue"] { color: #FF6B35 !important; }
+</style>
+""", unsafe_allow_html=True)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  LANDING PAGE
+# ═══════════════════════════════════════════════════════════════════════════════
+if st.session_state.page == "landing":
+
+    st.markdown("""
+    <style>
+      header[data-testid="stHeader"],
+      [data-testid="stSidebar"],
+      [data-testid="stToolbar"],
+      footer { display: none !important; }
+      .main .block-container { padding: 0 !important; max-width: 100% !important; }
+    </style>
+    """, unsafe_allow_html=True)
+
+    # NAV
+    st.markdown("""
+    <nav style="position:fixed;top:0;left:0;right:0;z-index:1000;display:flex;align-items:center;
+      justify-content:space-between;padding:0 clamp(1.5rem,5vw,4rem);height:68px;
+      background:rgba(255,255,255,.94);backdrop-filter:blur(14px);box-shadow:0 1px 6px rgba(0,0,0,.08);">
+      <a href="#" style="display:flex;align-items:center;gap:10px;text-decoration:none;">
+        <div style="width:36px;height:36px;border-radius:10px;
+          background:linear-gradient(135deg,#FF6B35,#FFA500);
+          display:flex;align-items:center;justify-content:center;font-size:20px;">&#x1FA94;</div>
+        <span style="font-size:1.2rem;font-weight:800;letter-spacing:-.5px;
+          background:linear-gradient(135deg,#FF6B35,#FFA500);
+          -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">
+          Drishti</span>
+      </a>
+      <div style="display:flex;align-items:center;gap:2rem;">
+        <a href="#problem" style="font-size:.9rem;font-weight:500;color:#18181b;text-decoration:none;">The Problem</a>
+        <a href="#features" style="font-size:.9rem;font-weight:500;color:#18181b;text-decoration:none;">How It Works</a>
+        <a href="#proof" style="font-size:.9rem;font-weight:500;color:#18181b;text-decoration:none;">The Proof</a>
+        <a href="?navigate=app" class="cta-btn" style="padding:.45rem 1.2rem;font-size:.875rem;">+ Report</a>
+      </div>
+    </nav>
+    """, unsafe_allow_html=True)
+
+    # HERO
+    st.markdown("""
+    <section id="hero" style="min-height:100vh;
+      background:linear-gradient(160deg,#fff8f5 0%,#fff2e6 45%,#fffaf2 100%);
+      display:flex;flex-direction:column;align-items:center;justify-content:center;
+      text-align:center;padding:8rem 1.5rem 5rem;overflow:hidden;position:relative;">
+
+      <div style="display:inline-flex;align-items:center;gap:8px;padding:6px 16px;
+        border-radius:50px;background:rgba(255,107,53,.10);border:1px solid rgba(255,107,53,.22);
+        font-size:.78rem;font-weight:700;color:#FF6B35;text-transform:uppercase;
+        letter-spacing:.06em;margin-bottom:1.5rem;">
+        <span style="width:7px;height:7px;border-radius:50%;background:#FF6B35;display:inline-block;"></span>
+        Nashik Kumbh Mela 2027 &middot; Claude Impact Lab
+      </div>
+
+      <h1 style="font-size:clamp(2.6rem,8vw,5.2rem);font-weight:900;line-height:1.06;
+        letter-spacing:-2.5px;max-width:880px;margin:0 0 1.5rem;color:#18181b;">
+        Reunite the
+        <span style="background:linear-gradient(135deg,#FF6B35,#FFA500);
+          -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">
+          missing</span><br>without surveilling anyone
+      </h1>
+
+      <p style="font-size:clamp(1rem,2.5vw,1.2rem);color:#52525b;max-width:600px;
+        margin:0 auto 2.5rem;line-height:1.78;">
+        One shared, live, de-identified registry that connects the two halves of every
+        search &mdash; the family looking and the person found &mdash; across centers that
+        today can&apos;t see each other, in any language, on weak data.
+        <strong>No face scans. No GPS tracking.</strong>
+      </p>
+
+      <div style="margin-bottom:3.5rem;">
+        <a href="?navigate=app" class="cta-btn">
+          <span style="font-size:1.25em;font-weight:800;">+</span>
+          Report the Missing Person
+          <span style="font-size:1.15em;">&rarr;</span>
+        </a>
+      </div>
+
+      <div style="display:flex;gap:2.5rem;justify-content:center;flex-wrap:wrap;">
+        <div><div style="font-size:2rem;font-weight:900;
+          background:linear-gradient(135deg,#FF6B35,#FFA500);-webkit-background-clip:text;
+          background-clip:text;-webkit-text-fill-color:transparent;">~10</div>
+          <div style="font-size:.78rem;color:#52525b;font-weight:500;margin-top:3px;">Centers Unified</div></div>
+        <div><div style="font-size:2rem;font-weight:900;
+          background:linear-gradient(135deg,#FF6B35,#FFA500);-webkit-background-clip:text;
+          background-clip:text;-webkit-text-fill-color:transparent;">202</div>
+          <div style="font-size:.78rem;color:#52525b;font-weight:500;margin-top:3px;">Real Validation Rows</div></div>
+        <div><div style="font-size:2rem;font-weight:900;
+          background:linear-gradient(135deg,#FF6B35,#FFA500);-webkit-background-clip:text;
+          background-clip:text;-webkit-text-fill-color:transparent;">0</div>
+          <div style="font-size:.78rem;color:#52525b;font-weight:500;margin-top:3px;">Faces Scanned</div></div>
+        <div><div style="font-size:2rem;font-weight:900;
+          background:linear-gradient(135deg,#FF6B35,#FFA500);-webkit-background-clip:text;
+          background-clip:text;-webkit-text-fill-color:transparent;">Offline</div>
+          <div style="font-size:.78rem;color:#52525b;font-weight:500;margin-top:3px;">Core Matcher Runs</div></div>
+      </div>
+
+      <div style="width:100%;overflow:hidden;line-height:0;margin-top:4rem;">
+        <svg viewBox="0 0 1440 80" preserveAspectRatio="none" style="display:block;width:100%;">
+          <path d="M0,40 C240,80 480,0 720,40 C960,80 1200,0 1440,40 L1440,80 L0,80 Z" fill="#18181b"/>
+        </svg>
+      </div>
+    </section>
+    """, unsafe_allow_html=True)
+
+    # PROBLEM (dark)
+    st.markdown("""
+    <section id="problem" style="background:#18181b;padding:clamp(4rem,8vw,7rem) 0;
+      position:relative;overflow:hidden;">
+      <div style="max-width:1160px;margin:0 auto;padding:0 clamp(1.5rem,5vw,3rem);">
+        <p style="font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+          color:#FF6B35;margin-bottom:1rem;">The Challenge</p>
+        <h2 style="font-size:clamp(1.8rem,4.5vw,2.8rem);font-weight:800;letter-spacing:-1px;
+          line-height:1.15;margin-bottom:1rem;color:#fff;">
+          Ten centers.<br><span style="color:#FFA500;">None of them can see each other.</span>
+        </h2>
+        <p style="font-size:1.05rem;color:rgba(255,255,255,.58);line-height:1.82;
+          max-width:640px;margin-bottom:3rem;">
+          A person <em>found</em> at Center B is invisible to a family <em>searching</em> at
+          Center A. The lost person is often elderly or a child, non-literate, panicking,
+          doesn&apos;t speak the local language &mdash; and usually cannot identify themselves.
+          Names and phone numbers are missing or useless.
+        </p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:1.25rem;">
+          <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+            border-radius:16px;padding:1.75rem;">
+            <div style="font-size:2rem;font-weight:900;background:linear-gradient(135deg,#FF6B35,#FFA500);
+              -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+              margin-bottom:.5rem;">Silos</div>
+            <div style="font-size:1rem;font-weight:700;color:#fff;margin-bottom:.4rem;">Disconnected Centers</div>
+            <p style="font-size:.875rem;color:rgba(255,255,255,.5);line-height:1.65;margin:0;">
+              Each camp keeps its own paper list. A match across the grounds stays unseen for hours.
+            </p>
+          </div>
+          <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+            border-radius:16px;padding:1.75rem;">
+            <div style="font-size:2rem;font-weight:900;background:linear-gradient(135deg,#FF6B35,#FFA500);
+              -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+              margin-bottom:.5rem;">No ID</div>
+            <div style="font-size:1rem;font-weight:700;color:#fff;margin-bottom:.4rem;">Weak Signals Only</div>
+            <p style="font-size:.875rem;color:rgba(255,255,255,.5);line-height:1.65;margin:0;">
+              All you have is age, gender, language, location, and a physical description.
+            </p>
+          </div>
+          <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+            border-radius:16px;padding:1.75rem;">
+            <div style="font-size:2rem;font-weight:900;background:linear-gradient(135deg,#FF6B35,#FFA500);
+              -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+              margin-bottom:.5rem;">Many langs</div>
+            <div style="font-size:1rem;font-weight:700;color:#fff;margin-bottom:.4rem;">Across Languages</div>
+            <p style="font-size:.875rem;color:rgba(255,255,255,.5);line-height:1.65;margin:0;">
+              &ldquo;Saffron saree, rudraksha&rdquo; and &ldquo;orange clothes, prayer beads&rdquo;
+              describe the same person &mdash; no rule-based system connects them.
+            </p>
+          </div>
+        </div>
+      </div>
+      <div style="width:100%;overflow:hidden;line-height:0;">
+        <svg viewBox="0 0 1440 80" preserveAspectRatio="none" style="display:block;width:100%;">
+          <path d="M0,40 C240,0 480,80 720,40 C960,0 1200,80 1440,40 L1440,80 L0,80 Z" fill="#ffffff"/>
+        </svg>
+      </div>
+    </section>
+    """, unsafe_allow_html=True)
+
+    # FEATURES
+    st.markdown("""
+    <section id="features" style="background:#fff;padding:clamp(4rem,8vw,7rem) 0;">
+      <div style="max-width:1160px;margin:0 auto;padding:0 clamp(1.5rem,5vw,3rem);">
+        <p style="font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+          color:#FF6B35;margin-bottom:1rem;">Our Solution</p>
+        <h2 style="font-size:clamp(1.8rem,4.5vw,2.8rem);font-weight:800;letter-spacing:-1px;
+          line-height:1.15;margin-bottom:1rem;color:#18181b;">Match the reports,<br>not the people</h2>
+        <p style="font-size:1.05rem;color:#52525b;max-width:580px;line-height:1.75;margin-bottom:3.5rem;">
+          Claude is the brain. Privacy is structural. The whole thing runs offline.
+        </p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;">
+          <div style="background:#fafafa;border:1.5px solid rgba(0,0,0,.06);border-radius:16px;padding:2rem;">
+            <div style="font-size:2rem;margin-bottom:1rem;">&#x2699;&#xFE0F;</div>
+            <div style="font-size:1.1rem;font-weight:700;margin-bottom:.5rem;color:#18181b;">Claude Cross-Lingual Matching</div>
+            <p style="font-size:.9rem;color:#52525b;line-height:1.72;margin:0 0 1rem;">
+              Structures voice intake and matches descriptions across languages &mdash;
+              and explains every match so an operator can trust it.
+            </p>
+            <span style="padding:4px 12px;border-radius:50px;font-size:.72rem;font-weight:700;
+              background:rgba(255,107,53,.10);color:#FF6B35;text-transform:uppercase;">The Brain</span>
+          </div>
+          <div style="background:#fafafa;border:1.5px solid rgba(0,0,0,.06);border-radius:16px;padding:2rem;">
+            <div style="font-size:2rem;margin-bottom:1rem;">&#x1F512;</div>
+            <div style="font-size:1.1rem;font-weight:700;margin-bottom:.5rem;color:#18181b;">Privacy That&apos;s Structural</div>
+            <p style="font-size:.9rem;color:#52525b;line-height:1.72;margin:0 0 1rem;">
+              Name and mobile are hashed at ingest. Identity is revealed only at a
+              human-confirmed reunion and raw PII is purged afterward.
+            </p>
+            <span style="padding:4px 12px;border-radius:50px;font-size:.72rem;font-weight:700;
+              background:rgba(255,107,53,.10);color:#FF6B35;text-transform:uppercase;">Reveal on Confirm</span>
+          </div>
+          <div style="background:#fafafa;border:1.5px solid rgba(0,0,0,.06);border-radius:16px;padding:2rem;">
+            <div style="font-size:2rem;margin-bottom:1rem;">&#x1F4E1;</div>
+            <div style="font-size:1.1rem;font-weight:700;margin-bottom:.5rem;color:#18181b;">Offline-First, No GPU</div>
+            <p style="font-size:.9rem;color:#52525b;line-height:1.72;margin:0 0 1rem;">
+              The core matcher runs with pandas + stdlib only &mdash; no network, no API key, no GPU.
+              Capture never blocks.
+            </p>
+            <span style="padding:4px 12px;border-radius:50px;font-size:.72rem;font-weight:700;
+              background:rgba(255,107,53,.10);color:#FF6B35;text-transform:uppercase;">Runs Anywhere</span>
+          </div>
+        </div>
+      </div>
+    </section>
+    """, unsafe_allow_html=True)
+
+    # WHAT WE DON'T DO
+    st.markdown("""
+    <section id="boundary" style="background:#fff7f3;padding:clamp(4rem,8vw,7rem) 0;">
+      <div style="max-width:1160px;margin:0 auto;padding:0 clamp(1.5rem,5vw,3rem);">
+        <p style="font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+          color:#FF6B35;margin-bottom:1rem;">The Honest Boundary</p>
+        <h2 style="font-size:clamp(1.8rem,4.5vw,2.8rem);font-weight:800;letter-spacing:-1px;
+          line-height:1.15;margin-bottom:1rem;color:#18181b;">
+          What we deliberately<br>do <span style="color:#FF6B35;">not</span> do
+        </h2>
+        <p style="font-size:1.05rem;color:#52525b;max-width:600px;line-height:1.75;margin-bottom:3rem;">
+          We don&apos;t track the person and we don&apos;t scan faces. A human always
+          brings them to a help point &mdash; we just make that fast.
+        </p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1.5rem;">
+          <div style="background:#fff;border-radius:20px;padding:2rem;
+            box-shadow:0 4px 24px rgba(0,0,0,.10);border:1px solid rgba(255,107,53,.07);">
+            <div style="font-size:1.5rem;margin-bottom:.75rem;">&#x1F6AB;</div>
+            <div style="font-size:1.05rem;font-weight:700;margin-bottom:.5rem;color:#18181b;">No facial recognition</div>
+            <p style="font-size:.93rem;color:#52525b;line-height:1.78;margin:0;">
+              CCTV input is coordinates only &mdash; no footage, no faces.
+              We predict <em>where to look</em>, never who is who.
+            </p>
+          </div>
+          <div style="background:#fff;border-radius:20px;padding:2rem;
+            box-shadow:0 4px 24px rgba(0,0,0,.10);border:1px solid rgba(255,107,53,.07);">
+            <div style="font-size:1.5rem;margin-bottom:.75rem;">&#x1F4CD;</div>
+            <div style="font-size:1.05rem;font-weight:700;margin-bottom:.5rem;color:#18181b;">No GPS tracking</div>
+            <p style="font-size:.93rem;color:#52525b;line-height:1.78;margin:0;">
+              The lost person carries no device. We match <em>reports</em> about them,
+              not a live location feed.
+            </p>
+          </div>
+          <div style="background:#fff;border-radius:20px;padding:2rem;
+            box-shadow:0 4px 24px rgba(0,0,0,.10);border:1px solid rgba(255,107,53,.07);">
+            <div style="font-size:1.5rem;margin-bottom:.75rem;">&#x1F91D;</div>
+            <div style="font-size:1.05rem;font-weight:700;margin-bottom:.5rem;color:#18181b;">A human always confirms</div>
+            <p style="font-size:.93rem;color:#52525b;line-height:1.78;margin:0;">
+              Identity is revealed only at a confirmed reunion. A blind-spot map
+              places help where separations cluster.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+    """, unsafe_allow_html=True)
+
+    # THE PROOF
+    st.markdown("""
+    <section id="proof" style="background:#fff;padding:clamp(4rem,8vw,7rem) 0;">
+      <div style="max-width:1160px;margin:0 auto;padding:0 clamp(1.5rem,5vw,3rem);">
+        <p style="font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+          color:#FF6B35;margin-bottom:1rem;">The Number That Proves It</p>
+        <h2 style="font-size:clamp(1.8rem,4.5vw,2.8rem);font-weight:800;letter-spacing:-1px;
+          line-height:1.15;margin-bottom:1rem;color:#18181b;">A real metric,<br>not a demo</h2>
+        <p style="font-size:1.05rem;color:#52525b;max-width:600px;line-height:1.75;margin-bottom:2.5rem;">
+          Almost no team brings a real number.
+          <code style="background:#fff2e6;padding:1px 6px;border-radius:5px;">validate.py</code>
+          runs offline in seconds against 202 real duplicate-report rows.
+        </p>
+        <div style="background:#18181b;border-radius:16px;padding:1.75rem 2rem;
+          font-family:monospace;color:#fafafa;overflow-x:auto;
+          box-shadow:0 16px 52px rgba(0,0,0,.18);margin-bottom:2rem;">
+          <div style="color:rgba(255,255,255,.4);font-size:.8rem;margin-bottom:.75rem;"># run THE NUMBER, offline, in seconds</div>
+          <div style="font-size:.95rem;line-height:2;">
+            <span style="color:#FFA500;">$</span> python -m drishti.ingest
+            <span style="color:rgba(255,255,255,.4);">&nbsp;&nbsp;# seeded 2500 records</span>
+          </div>
+          <div style="font-size:.95rem;line-height:2;">
+            <span style="color:#FFA500;">$</span> python -m drishti.validate
+            <span style="color:rgba(255,255,255,.4);">&nbsp;# THE NUMBER</span>
+          </div>
+          <div style="font-size:.95rem;line-height:2;">
+            <span style="color:#FFA500;">$</span> streamlit run app/dashboard.py
+            <span style="color:rgba(255,255,255,.4);">&nbsp;# operator UI</span>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:1.25rem;">
+          <div style="background:#fafafa;border:1.5px solid rgba(0,0,0,.06);border-radius:16px;padding:1.5rem;">
+            <div style="font-size:1.8rem;font-weight:900;background:linear-gradient(135deg,#FF6B35,#FFA500);
+              -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">Method A</div>
+            <p style="font-size:.875rem;color:#52525b;line-height:1.65;margin:.4rem 0 0;">
+              Recall against 202 real <code>is_duplicate_report</code> rows.
+            </p>
+          </div>
+          <div style="background:#fafafa;border:1.5px solid rgba(0,0,0,.06);border-radius:16px;padding:1.5rem;">
+            <div style="font-size:1.8rem;font-weight:900;background:linear-gradient(135deg,#FF6B35,#FFA500);
+              -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">Method B</div>
+            <p style="font-size:.875rem;color:#52525b;line-height:1.65;margin:.4rem 0 0;">
+              Discrimination gap on synthetic recovered pairs.
+            </p>
+          </div>
+          <div style="background:#fafafa;border:1.5px solid rgba(0,0,0,.06);border-radius:16px;padding:1.5rem;">
+            <div style="font-size:1.8rem;font-weight:900;background:linear-gradient(135deg,#FF6B35,#FFA500);
+              -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">Seconds</div>
+            <p style="font-size:.875rem;color:#52525b;line-height:1.65;margin:.4rem 0 0;">
+              No network, no API key, no GPU. The differentiator.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+    """, unsafe_allow_html=True)
+
+    # HOW IT WORKS
+    st.markdown("""
+    <section id="how" style="background:#fff7f3;padding:clamp(4rem,8vw,7rem) 0;">
+      <div style="max-width:1160px;margin:0 auto;padding:0 clamp(1.5rem,5vw,3rem);">
+        <p style="font-size:.78rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;
+          color:#FF6B35;margin-bottom:1rem;">Architecture &middot; One Screen</p>
+        <h2 style="font-size:clamp(1.8rem,4.5vw,2.8rem);font-weight:800;letter-spacing:-1px;
+          line-height:1.15;margin-bottom:1rem;color:#18181b;">
+          From a lost report<br>to a confirmed reunion
+        </h2>
+        <p style="font-size:1.05rem;color:#52525b;max-width:600px;line-height:1.75;margin-bottom:3.5rem;">
+          Voice-first intake feeds one shared registry. Intelligence runs on top.
+          A human always closes the loop.
+        </p>
+        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+          gap:2rem;text-align:center;">
+          <div>
+            <div style="width:56px;height:56px;border-radius:50%;
+              background:linear-gradient(135deg,#FF6B35,#FFA500);color:#fff;font-size:1.3rem;
+              font-weight:900;display:flex;align-items:center;justify-content:center;
+              margin:0 auto 1.25rem;box-shadow:0 8px 32px rgba(255,107,53,.38);">1</div>
+            <div style="font-size:1rem;font-weight:700;margin-bottom:.5rem;color:#18181b;">Intake</div>
+            <p style="font-size:.875rem;color:#52525b;line-height:1.65;margin:0;">
+              Operator asks &ldquo;Lost?&rdquo; or &ldquo;Found?&rdquo; Voice-first.
+              Name and mobile are hashed immediately.
+            </p>
+          </div>
+          <div>
+            <div style="width:56px;height:56px;border-radius:50%;
+              background:linear-gradient(135deg,#FF6B35,#FFA500);color:#fff;font-size:1.3rem;
+              font-weight:900;display:flex;align-items:center;justify-content:center;
+              margin:0 auto 1.25rem;box-shadow:0 8px 32px rgba(255,107,53,.38);">2</div>
+            <div style="font-size:1rem;font-weight:700;margin-bottom:.5rem;color:#18181b;">The Registry</div>
+            <p style="font-size:.875rem;color:#52525b;line-height:1.65;margin:0;">
+              One shared, live, de-identified pool. Every report from any center lands
+              here and breaks the silos.
+            </p>
+          </div>
+          <div>
+            <div style="width:56px;height:56px;border-radius:50%;
+              background:linear-gradient(135deg,#FF6B35,#FFA500);color:#fff;font-size:1.3rem;
+              font-weight:900;display:flex;align-items:center;justify-content:center;
+              margin:0 auto 1.25rem;box-shadow:0 8px 32px rgba(255,107,53,.38);">3</div>
+            <div style="font-size:1rem;font-weight:700;margin-bottom:.5rem;color:#18181b;">Intelligence</div>
+            <p style="font-size:.875rem;color:#52525b;line-height:1.65;margin:0;">
+              Tier-1 offline rules + Tier-2 Claude cross-lingual matching + drift
+              predictor + blind-spot map.
+            </p>
+          </div>
+          <div>
+            <div style="width:56px;height:56px;border-radius:50%;
+              background:linear-gradient(135deg,#FF6B35,#FFA500);color:#fff;font-size:1.3rem;
+              font-weight:900;display:flex;align-items:center;justify-content:center;
+              margin:0 auto 1.25rem;box-shadow:0 8px 32px rgba(255,107,53,.38);">4</div>
+            <div style="font-size:1rem;font-weight:700;margin-bottom:.5rem;color:#18181b;">Reunite</div>
+            <p style="font-size:.875rem;color:#52525b;line-height:1.65;margin:0;">
+              A human confirms the match &mdash; only then is identity revealed,
+              and raw PII is purged.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+    """, unsafe_allow_html=True)
+
+    # FINAL CTA
+    st.markdown("""
+    <section id="cta" style="padding:clamp(5rem,10vw,9rem) 1.5rem;text-align:center;
+      background:linear-gradient(135deg,#FF6B35 0%,#FFA500 100%);
+      position:relative;overflow:hidden;">
+      <div style="position:absolute;top:-50%;left:-10%;width:600px;height:600px;
+        border-radius:50%;background:rgba(255,255,255,.07);pointer-events:none;"></div>
+      <h2 style="font-size:clamp(2rem,5vw,3.5rem);font-weight:900;color:#fff;
+        letter-spacing:-1.5px;line-height:1.1;margin-bottom:1rem;position:relative;z-index:1;">
+        Connect the two halves<br>of every search
+      </h2>
+      <p style="font-size:1.1rem;color:rgba(255,255,255,.85);max-width:560px;
+        margin:0 auto 2.5rem;line-height:1.72;position:relative;z-index:1;">
+        Built for the Claude Impact Lab, Mumbai 2026. Open source, offline-first,
+        designed so no one is ever surveilled.
+      </p>
+      <div style="position:relative;z-index:1;margin-bottom:1.5rem;">
+        <a href="?navigate=app" class="cta-btn cta-btn-white">Register Missing Person</a>
+      </div>
+      <p style="font-size:.8rem;color:rgba(255,255,255,.65);position:relative;z-index:1;">
+        No face scans &middot; No GPS tracking &middot; Runs offline
+      </p>
+    </section>
+
+    <footer style="background:#18181b;padding:3rem clamp(1.5rem,5vw,4rem);">
+      <div style="max-width:1160px;margin:0 auto;display:flex;align-items:center;
+        justify-content:space-between;flex-wrap:wrap;gap:1.5rem;">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <div style="width:32px;height:32px;border-radius:9px;
+            background:linear-gradient(135deg,#FF6B35,#FFA500);
+            display:flex;align-items:center;justify-content:center;font-size:17px;">&#x1FA94;</div>
+          <span style="font-size:1rem;font-weight:800;background:linear-gradient(135deg,#FF6B35,#FFA500);
+            -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">Drishti</span>
+        </div>
+        <span style="font-size:.825rem;color:rgba(255,255,255,.4);">
+          The Problem &nbsp;&middot;&nbsp; How It Works &nbsp;&middot;&nbsp; The Proof
+        </span>
+      </div>
+      <div style="max-width:1160px;margin:2rem auto 0;border-top:1px solid rgba(255,255,255,.08);
+        padding-top:1.5rem;display:flex;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
+        <p style="font-size:.8rem;color:rgba(255,255,255,.35);margin:0;">
+          &copy; 2026 Drishti &middot; Claude Impact Lab, Mumbai 2026
+        </p>
+        <p style="font-size:.8rem;color:rgba(255,255,255,.28);margin:0;">
+          Made with <span style="color:#FF6B35;">&#9829;</span> for Nashik Kumbh Mela 2027
+        </p>
+      </div>
+    </footer>
+    """, unsafe_allow_html=True)
+
+    st.stop()  # nothing below runs on the landing page
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+#  OPERATOR APP
+# ═══════════════════════════════════════════════════════════════════════════════
 from drishti import config as C
 from drishti import i18n
 
-st.set_page_config(page_title="Drishti", page_icon="🪔", layout="wide")
 
-# The thin backend door (Person B). Lazy so the app still loads if deps are missing.
 def _api():
     from drishti import api
     return api
@@ -31,17 +509,28 @@ def _ensure():
         api = _api()
         msg = api.ensure_seeded()
         return api, msg, None
-    except Exception as e:  # pragma: no cover - surfaced in the UI
+    except Exception as e:
         return None, None, str(e)
 
 
 api, seed_msg, init_err = _ensure()
 
-# ---- sidebar: website language + live DB status -----------------------------
 with st.sidebar:
+    st.markdown("""
+    <a href="?navigate=landing" style="display:flex;align-items:center;gap:8px;
+      text-decoration:none;margin-bottom:1rem;">
+      <div style="width:30px;height:30px;border-radius:8px;
+        background:linear-gradient(135deg,#FF6B35,#FFA500);
+        display:flex;align-items:center;justify-content:center;font-size:16px;">&#x1FA94;</div>
+      <span style="font-weight:800;background:linear-gradient(135deg,#FF6B35,#FFA500);
+        -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;">
+        Drishti</span>
+    </a>
+    """, unsafe_allow_html=True)
+
     ui_lang = st.selectbox("🌐 " + i18n.EN["ui_lang"], list(i18n.UI_LANGS),
                            help="Translates the whole interface.")
-    T = i18n.translator(ui_lang)            # t(key) for the chosen UI language
+    T = i18n.translator(ui_lang)
     st.divider()
     st.subheader("🗄️ " + T("registry_live"))
     if init_err:
@@ -66,7 +555,7 @@ tab_file, tab_registry, tab_matches, tab_maps, tab_validation, tab_mesh = st.tab
      T("tab_maps"), T("tab_validation"), T("tab_mesh")]
 )
 
-# ---------------------------------------------------------------- File (intake)
+# ── File (intake) ─────────────────────────────────────────────────────────────
 with tab_file:
     st.header(T("file_header"))
     st.caption(T("nothing_mandatory"))
@@ -85,7 +574,7 @@ with tab_file:
             except (ValueError, AttributeError):
                 return default
 
-        def _clean(x):  # drop the "unknown / not set" placeholders
+        def _clean(x):
             return "" if not x or x in ("Unknown", "—") else x
 
         def _say(text_en, lang_name):
@@ -106,7 +595,6 @@ with tab_file:
                          horizontal=True, label_visibility="collapsed")
 
         if vmode == "⚡ One-shot":
-            # one recording → fills the whole form
             if st.button(f"{T('ask_in')} {lang}"):
                 st.session_state["ask"] = _say(voice.assistant_prompt(), lang)
             ask = st.session_state.get("ask")
@@ -121,10 +609,9 @@ with tab_file:
                     with st.spinner(f"{asr} + {brain}…"):
                         st.session_state["voice"] = voice.voice_to_fields(clip)
         else:
-            # ChatGPT-style: assistant asks one question at a time, by voice
             qs = voice.CONVO_QUESTIONS
             convo = st.session_state.setdefault("convo", {"turn": -1, "collected": {},
-                                                          "history": [], "q_text": "", "q_audio": None})
+                                                           "history": [], "q_text": "", "q_audio": None})
 
             def _ask_turn(i):
                 convo["q_text"], convo["q_audio"] = _say(qs[i], lang)
@@ -160,7 +647,6 @@ with tab_file:
                 if st.button("🔄 Restart conversation"):
                     st.session_state.pop("convo", None)
                     st.rerun()
-            # feed whatever the conversation collected into the shared form fields
             st.session_state["voice"] = {
                 "transcript": " · ".join(t for t in convo.get("history", []) if t),
                 "fields": convo.get("collected", {}), "asr": True,
@@ -171,9 +657,8 @@ with tab_file:
         v = st.session_state.get("voice") or {}
         vf = v.get("fields", {}) if v else {}
         if v.get("transcript") and vmode == "⚡ One-shot":
-            st.success(f"🗣️ Heard (→ English): “{v['transcript']}”")
+            st.success('🗣️ Heard (→ English): "' + v["transcript"] + '"')
 
-        # ---- the form (voice-filled when you transcribe; everything optional) ----
         st.markdown("##### " + T("details_optional"))
         r1, r2, r3 = st.columns(3)
         reporter_name = r1.text_input(T("your_name"), value=vf.get("reporter_name", ""))
@@ -215,7 +700,6 @@ with tab_file:
         if st.button(T("file_report"), type="primary"):
             case_id = "KMP-2027-" + uuid.uuid4().hex[:5].upper()
             rtype = "missing" if fork.startswith("🔍") else "found"
-            # compose an English description from the optional appearance fields
             bits = [b for b in [
                 _clean(height) and f"{height.lower()} height",
                 _clean(build) and f"{build.lower()} build",
@@ -241,13 +725,11 @@ with tab_file:
                 st.success(f"Filed **{case_id}** → registry + vault. Slip printed.")
             except Exception as e:
                 st.error(f"Persist failed: {e}")
-            # keep the voice recording with the case (gitignored, PII-bearing)
             if st.session_state.get("clip_bytes"):
                 d = C.ROOT / "data" / "voice_clips"
                 d.mkdir(parents=True, exist_ok=True)
                 (d / f"{case_id}.wav").write_bytes(st.session_state["clip_bytes"])
                 st.caption(f"🎙️ Voice recording saved with {case_id}.")
-            # emergency broadcast to nearby booths (person may have drifted)
             try:
                 payload = geo.broadcast_alert(seen_near, radius_m=1000)
                 st.warning(f"🚨 Emergency signal → **{payload['count']} booths** within "
@@ -257,7 +739,7 @@ with tab_file:
                 pass
             if rtype == "found":
                 txt, audio = voice.containment_message(lang)
-                st.info(f"🔊 Spoken to the found person in {lang}: “{txt}”")
+                st.info(f'🔊 Spoken to the found person in {lang}: "{txt}"')
                 if audio:
                     st.audio(base64.b64decode(audio), format="audio/mp3")
             try:
@@ -270,7 +752,7 @@ with tab_file:
             except Exception:
                 pass
 
-# ---------------------------------------------------------------- Registry
+# ── Registry ──────────────────────────────────────────────────────────────────
 with tab_registry:
     st.header(T("registry_header"))
     if init_err:
@@ -289,7 +771,7 @@ with tab_registry:
             use_container_width=True, hide_index=True,
         )
 
-# ---------------------------------------------------------------- Matches
+# ── Matches ───────────────────────────────────────────────────────────────────
 with tab_matches:
     st.header(T("matches_header"))
     if init_err:
@@ -305,13 +787,12 @@ with tab_matches:
             picked = st.selectbox("Pick an open report to match", list(labels))
             case_id = labels[picked]
             target = api.get_record(case_id)
-            st.caption(f"“{target.physical_description}”")
+            st.caption(f'"{target.physical_description}"')
 
             matches = api.find_matches(case_id, top_k=3)
             if not matches:
                 st.info("No candidates in the time-windowed open pool yet.")
             for m in matches:
-                # Tier-2 decision bands (config): auto≥70 alert a human, review≥40, else low
                 if m["score"] >= C.MATCH_AUTO:
                     band = "🟢 AUTO"
                 elif m["score"] >= C.MATCH_REVIEW:
@@ -323,10 +804,9 @@ with tab_matches:
                     c1.markdown(
                         f"**{m['case_id']}** · {m['report_type']} · {m['gender']} "
                         f"{m['age_band']} · {m['language']} @ {m['last_seen_location']} "
-                        f"· _{m['reporting_center']}_  \n“{m['physical_description']}”")
+                        f'· _{m["reporting_center"]}_  \n"{m["physical_description"]}"')
                     c2.metric("score", f"{m['score']:.0f}", band)
                     st.caption("why: " + " · ".join(f"{k}+{v}" for k, v in m["reasons"].items()))
-                    # the reveal-on-confirm privacy moment
                     if st.button(f"✅ Confirm reunion: {case_id} ↔ {m['case_id']}",
                                  key=f"confirm_{case_id}_{m['case_id']}"):
                         res = api.confirm(case_id, m["case_id"], actor="operator",
@@ -348,7 +828,7 @@ with tab_matches:
                     del st.session_state["last_confirm"]
                     st.rerun()
 
-# ---------------------------------------------------------------- Maps
+# ── Maps ──────────────────────────────────────────────────────────────────────
 with tab_maps:
     st.header("🗺️ " + T("maps_header"))
     try:
@@ -365,7 +845,7 @@ with tab_maps:
                 radius = st.slider("Emergency radius (m)", 300, 2000, 1000, 100)
                 payload = geo.broadcast_alert(origin, radius_m=radius)
                 st.metric("🚨 Booths alerted", payload["count"])
-                st.caption("Every booth in the radius gets the signal — the person may have drifted there.")
+                st.caption("Every booth in the radius gets the signal.")
                 for b in payload["alerted_booths"][:12]:
                     st.write(f"• {b['name']} — {b['distance_m']} m")
             with right:
@@ -373,8 +853,7 @@ with tab_maps:
                           height=480, use_container_width=True, returned_objects=[])
 
         with mt2:
-            st.caption("Bounded by walking speed (~1–2 km/h) + behavioural priors → "
-                       "alert ONLY the likely zones, not all 50 booths.")
+            st.caption("Bounded by walking speed (~1–2 km/h) + behavioural priors.")
             d1, d2, d3 = st.columns(3)
             ls = d1.selectbox("Last seen near", names, index=d_idx, key="dr")
             prof = d2.selectbox("Profile", ["elderly", "child", "adult"])
@@ -385,8 +864,7 @@ with tab_maps:
             st.caption("elderly → anchor landmarks · child → close & erratic · adult → exits")
 
         with mt3:
-            st.caption("High crowd-separation pressure × few cameras = where people vanish "
-                       "unseen → place kiosks/volunteers here BEFORE the surge.")
+            st.caption("High crowd-separation × few cameras = where people vanish unseen.")
             l, r = st.columns([1, 2])
             with l:
                 for d in blindspot.rank_blind_spots(top_k=10):
@@ -395,10 +873,9 @@ with tab_maps:
                 st_folium(blindspot.build_map(top_k=12), height=480,
                           use_container_width=True, returned_objects=[])
     except Exception as e:
-        st.warning("Maps need the venv (folium + streamlit-folium) and "
-                   "`python scripts/make_nashik_geo.py`.\n\n" + str(e))
+        st.warning("Maps need folium + streamlit-folium in the venv.\n\n" + str(e))
 
-# ---------------------------------------------------------------- Validation
+# ── Validation ────────────────────────────────────────────────────────────────
 with tab_validation:
     st.header(T("validation_header"))
     if st.button(T("run_validation")):
@@ -410,11 +887,11 @@ with tab_validation:
         except Exception as e:
             st.error(f"Need data/ populated to run validation on real data: {e}")
 
-# ---------------------------------------------------------------- Mesh
+# ── Mesh ──────────────────────────────────────────────────────────────────────
 with tab_mesh:
     st.header("📡 " + T("mesh_header"))
-    st.caption("Capture NEVER blocks. Normal: booths sync to central over LAN. LAN down: "
-               "booths sync peer-to-peer with neighbours. Worst case: one SMS carries the report.")
+    st.caption("Capture NEVER blocks. LAN down: booths sync peer-to-peer. "
+               "Worst case: one SMS carries the report.")
     from drishti import mesh, sms
     if st.button("▶ Run booth↔booth P2P sim (LAN-loss fallback)"):
         res = mesh.run_demo()
