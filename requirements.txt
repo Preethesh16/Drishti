@@ -1,0 +1,20 @@
+# --- Spine (steps 1-4): pandas + stdlib only. MUST run offline, no keys. ---
+pandas>=2.0
+
+# --- Tier-1 text similarity (optional but recommended; code falls back to stdlib Jaccard) ---
+rapidfuzz>=3.0
+
+# --- Dashboard (Person C) ---
+streamlit>=1.30
+folium>=0.15
+streamlit-folium>=0.18
+
+# --- Geometry / KML (Person C maps + Person A geo) ---
+shapely>=2.0
+lxml>=5.0
+
+# --- Tier-2 brain (optional; degrade cleanly without key) ---
+anthropic>=0.40
+
+# --- Env loading ---
+python-dotenv>=1.0
