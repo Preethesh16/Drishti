@@ -10,11 +10,14 @@ Run:  python scripts/make_nashik_geo.py [--force]
 from __future__ import annotations
 
 import csv
+import random
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUT = ROOT / "data" / "nashik_landmarks.csv"
+CCTV_OUT = ROOT / "data" / "nashik_cctv.csv"
+_rng = random.Random(73)
 
 # Real, recognisable Nashik Kumbh landmarks (people report "near <these>").
 LANDMARKS = [
@@ -86,6 +89,34 @@ def main(force=False):
     n_booth = sum(1 for r in rows if r["type"] == "booth")
     print(f"wrote {len(rows)} points ({len(LANDMARKS)} landmarks + {n_booth} booths "
           f"on ~500m grid) -> {OUT}")
+    write_cctv(force)
+
+
+def write_cctv(force=False):
+    """CCTV cameras: DENSE clusters at major landmarks, SPARSE at the edges — so
+    blind spots (high crowd pressure × few cameras) emerge for blindspot.py."""
+    if CCTV_OUT.exists() and not force:
+        return
+    # cameras cluster around the busy temple/ghat core; transit edges stay thin
+    HOT = ["Ramkund Ghat", "Kalaram Mandir", "Kapaleshwar Mandir", "Tapovan Sangam",
+           "Panchavati Karyalay", "CBS Bus Stand"]
+    cams, cid = [], 0
+    by_name = {n: (la, lo) for n, la, lo in LANDMARKS}
+    for n in HOT:
+        la, lo = by_name[n]
+        for _ in range(_rng.randint(7, 11)):          # dense cluster (~150m)
+            cid += 1
+            cams.append((f"CAM{cid:04d}", round(la + _rng.uniform(-0.0014, 0.0014), 6),
+                         round(lo + _rng.uniform(-0.0014, 0.0014), 6)))
+    for _ in range(18):                                # a few sparse outer cameras
+        cid += 1
+        cams.append((f"CAM{cid:04d}", round(_rng.uniform(19.985, 20.012), 6),
+                     round(_rng.uniform(73.780, 73.806), 6)))
+    with open(CCTV_OUT, "w", newline="", encoding="utf-8") as fh:
+        w = csv.writer(fh)
+        w.writerow(["camera_id", "lat", "lng"])
+        w.writerows(cams)
+    print(f"wrote {len(cams)} CCTV cameras (dense core, sparse edges) -> {CCTV_OUT}")
 
 
 if __name__ == "__main__":

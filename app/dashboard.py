@@ -15,6 +15,8 @@ from __future__ import annotations
 
 import streamlit as st
 
+from drishti import config as C
+
 st.set_page_config(page_title="Drishti", page_icon="🪔", layout="wide")
 
 # The thin backend door (Person B). Lazy so the app still loads if deps are missing.
@@ -206,14 +208,20 @@ with tab_matches:
             if not matches:
                 st.info("No candidates in the time-windowed open pool yet.")
             for m in matches:
-                strong = "🟢 strong" if m["is_strong"] else "🟡 weak"
+                # Tier-2 decision bands (config): auto≥70 alert a human, review≥40, else low
+                if m["score"] >= C.MATCH_AUTO:
+                    band = "🟢 AUTO"
+                elif m["score"] >= C.MATCH_REVIEW:
+                    band = "🟡 REVIEW"
+                else:
+                    band = "⚪ low"
                 with st.container(border=True):
                     c1, c2 = st.columns([3, 1])
                     c1.markdown(
                         f"**{m['case_id']}** · {m['report_type']} · {m['gender']} "
                         f"{m['age_band']} · {m['language']} @ {m['last_seen_location']} "
                         f"· _{m['reporting_center']}_  \n“{m['physical_description']}”")
-                    c2.metric("score", f"{m['score']:.0f}", strong)
+                    c2.metric("score", f"{m['score']:.0f}", band)
                     st.caption("why: " + " · ".join(f"{k}+{v}" for k, v in m["reasons"].items()))
                     # the reveal-on-confirm privacy moment
                     if st.button(f"✅ Confirm reunion: {case_id} ↔ {m['case_id']}",
@@ -239,29 +247,52 @@ with tab_matches:
 
 # ---------------------------------------------------------------- Maps
 with tab_maps:
-    st.header("🗺️ Nashik Kumbh — named landmarks · booths every ~500 m · live broadcast")
+    st.header("🗺️ Nashik Kumbh — broadcast · where to search · where to place help")
     try:
-        from drishti import geo
+        from drishti import geo, drift, blindspot
         from streamlit_folium import st_folium
-        pts = geo.load_points()
-        names = [p.name for p in pts]
-        default = names.index("Ramkund Ghat") if "Ramkund Ghat" in names else 0
-        left, right = st.columns([1, 2])
-        with left:
-            origin = st.selectbox("A report comes in near…", names, index=default)
-            radius = st.slider("Emergency radius (m)", 300, 2000, 1000, 100)
-            payload = geo.broadcast_alert(origin, radius_m=radius)
-            st.metric("🚨 Booths alerted", payload["count"])
-            st.caption("Every booth in the radius gets the signal — the lost "
-                       "person may have walked there.")
-            for b in payload["alerted_booths"][:12]:
-                st.write(f"• {b['name']} — {b['distance_m']} m")
-        with right:
-            fmap = geo.build_map(highlight=origin, radius_m=radius)
-            st_folium(fmap, height=520, use_container_width=True,
-                      returned_objects=[])
+        names = [p.name for p in geo.load_points()]
+        d_idx = names.index("Ramkund Ghat") if "Ramkund Ghat" in names else 0
+        mt1, mt2, mt3 = st.tabs(["🚨 Live broadcast", "🧭 Drift predictor", "📷 Blind-spot map"])
+
+        with mt1:
+            left, right = st.columns([1, 2])
+            with left:
+                origin = st.selectbox("A report comes in near…", names, index=d_idx, key="bc")
+                radius = st.slider("Emergency radius (m)", 300, 2000, 1000, 100)
+                payload = geo.broadcast_alert(origin, radius_m=radius)
+                st.metric("🚨 Booths alerted", payload["count"])
+                st.caption("Every booth in the radius gets the signal — the person may have drifted there.")
+                for b in payload["alerted_booths"][:12]:
+                    st.write(f"• {b['name']} — {b['distance_m']} m")
+            with right:
+                st_folium(geo.build_map(highlight=origin, radius_m=radius),
+                          height=480, use_container_width=True, returned_objects=[])
+
+        with mt2:
+            st.caption("Bounded by walking speed (~1–2 km/h) + behavioural priors → "
+                       "alert ONLY the likely zones, not all 50 booths.")
+            d1, d2, d3 = st.columns(3)
+            ls = d1.selectbox("Last seen near", names, index=d_idx, key="dr")
+            prof = d2.selectbox("Profile", ["elderly", "child", "adult"])
+            elapsed = d3.slider("Missing for (hours)", 0.5, 8.0, 2.0, 0.5)
+            for z in drift.predict(ls, elapsed, prof, top_k=6):
+                st.write(f"**{z['probability']*100:.0f}%** · {z['name']} "
+                         f"({z['distance_m']} m, {z['type']})")
+            st.caption("elderly → anchor landmarks · child → close & erratic · adult → exits")
+
+        with mt3:
+            st.caption("High crowd-separation pressure × few cameras = where people vanish "
+                       "unseen → place kiosks/volunteers here BEFORE the surge.")
+            l, r = st.columns([1, 2])
+            with l:
+                for d in blindspot.rank_blind_spots(top_k=10):
+                    st.write(f"🚨 **{d['name']}** — pressure {d['pressure']}, {d['cameras']} cams")
+            with r:
+                st_folium(blindspot.build_map(top_k=12), height=480,
+                          use_container_width=True, returned_objects=[])
     except Exception as e:
-        st.warning("Map needs the venv (folium + streamlit-folium) and "
+        st.warning("Maps need the venv (folium + streamlit-folium) and "
                    "`python scripts/make_nashik_geo.py`.\n\n" + str(e))
 
 # ---------------------------------------------------------------- Validation
@@ -278,5 +309,19 @@ with tab_validation:
 
 # ---------------------------------------------------------------- Mesh
 with tab_mesh:
-    st.header("Offline mesh (simulated)")
-    st.info("PERSON B: simulated DTN hop A→B→C→online→match→ack (phase B5).")
+    st.header("📡 Connectivity ladder — LAN → booth↔booth P2P → SMS")
+    st.caption("Capture NEVER blocks. Normal: booths sync to central over LAN. LAN down: "
+               "booths sync peer-to-peer with neighbours. Worst case: one SMS carries the report.")
+    from drishti import mesh, sms
+    if st.button("▶ Run booth↔booth P2P sim (LAN-loss fallback)"):
+        res = mesh.run_demo()
+        for e in res["events"]:
+            st.write(e)
+        st.success(f"Converged (terminal-status-wins): {res['converged']} · "
+                   f"central state: {res['final']}")
+    st.divider()
+    st.markdown("##### 📨 SMS bridge (no-signal fallback)")
+    st.caption("A low-end phone / field radio sends: TYPE|GENDER|AGE|STATE|LOCATION")
+    line = st.text_input("Inbound SMS", "MISSING|F|65|Bihar|SectorB")
+    parsed = sms.parse_inbound(line)
+    st.write("parsed →", parsed or "invalid format")
