@@ -16,5 +16,8 @@ lxml>=5.0
 # --- Tier-2 brain (optional; degrade cleanly without key) ---
 anthropic>=0.40
 
+# --- Voice: Sarvam AI ASR/TTS/translate for Indian languages (optional) ---
+sarvamai>=0.1
+
 # --- Env loading ---
 python-dotenv>=1.0
