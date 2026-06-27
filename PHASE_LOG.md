@@ -251,3 +251,38 @@ persists to vault+registry, fires B2 retroactive match, broadcasts to nearby boo
 
 **Next:** verify the integrated app end-to-end, push main, sync core/design. (B keeps
 `backend`; can fast-forward from main.)
+
+---
+
+## 2026-06-27 — Turn 8 — Build out everything + voice-in-website + intake redesign
+
+**Asked:** "fully build everything, tell me what's remaining." Then: voice assistance is
+not actually IN the website; richer Lost-person fields (height/hair/build/relation/names/
+marks…), nothing mandatory; voice assistant asks the questions in the reporter's language
+and fills fields; keep a voice recording; remove the Deploy button; remove hardcoded
+landmarks → keep 50 booth pin-points.
+
+**Did:**
+- **Intelligence modules:** `drift.py` (where to search — walking speed + elderly/child/
+  adult priors), `blindspot.py` (+CCTV generator — crowd pressure × camera coverage),
+  `sms.py` (no-signal fallback), `mesh.py` (booth↔booth P2P sim, converges). Wired into
+  Maps (3 sub-tabs) + Mesh tab; Matches got band coloring. Demo data re-dated to "now" so
+  File→match→reveal works (verified: filed report → KS01744 score 65).
+- **Voice IN the website:** free LOCAL Whisper ASR (faster-whisper) so the mic works with
+  no key; `voice_to_fields()`; File tab has a real `st.audio_input` mic; **the assistant
+  speaks the questions in the reporter's language** then transcribes+structures the answer.
+  Recording saved with the case (`data/voice_clips/`, gitignored).
+- **Rich intake:** all-optional fields (your name, relation, their name, gender, age,
+  height, build, hair length/colour, complexion, clothing, marks, booth) → composed into
+  an English description for the matcher; reporter/relation → remarks.
+- **Map:** removed hardcoded landmarks → **50 named booth pins** on a ~500m grid; maps
+  centre on the mean; drift/blindspot use name-based priors.
+- **UI:** `.streamlit/config.toml` toolbarMode=minimal (no Deploy button) + warm theme.
+
+**Ran:** all module self-tests pass; end-to-end voice (edge-tts→Whisper→fields) with NO
+keys; dashboard compiles + serves HTTP 200; 50 booths / drift→exits / blindspot→edges.
+
+**Git:** committed across several units on `main`; synced `core`/`design`.
+
+**Next:** see "what's remaining" — tune number on OFFICIAL data; optional keys for best
+voice/Claude accuracy; branding polish; B can fast-forward `backend` from main.

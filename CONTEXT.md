@@ -116,10 +116,17 @@ fixture-proven) → **(real data → tag v0.1-number)** → 5 dashboard → 6 ti
   is the thin facade (stats/list_records/find_matches/file_report/confirm/ensure_seeded);
   the dashboard reads/writes the DB through it (no CSV, no direct SQLite). Proven by
   `scripts/demo_backend.py` (no data/keys → ALL CHECKS PASSED).
-- **Dashboard (integrated):** sidebar live DB stats; Registry + Matches (reveal-on-confirm)
-  wired to `api`; **File tab** intake persists via `api.file_report` + geo broadcast +
-  voice containment; **Maps tab** live Nashik map. Run via `.venv/bin/python -m streamlit`.
-- **Env:** dev uses `.venv --system-site-packages` (folium/streamlit-folium/edge-tts added).
+- **Dashboard (integrated, all tabs live):** sidebar DB stats; Registry + Matches
+  (top-3 + reasons + band colour + reveal-on-confirm); **File tab** = 🎙️ voice assistant
+  (mic, asks in reporter's language, free Whisper ASR, Claude fills the rich all-optional
+  form, recording kept) → `api.file_report` → broadcast → containment + instant match;
+  **Maps tab** = 3 sub-tabs (broadcast · drift · blind-spot) over 50 booth pins; **Mesh
+  tab** = booth↔booth P2P sim + SMS bridge. Deploy button hidden (`.streamlit/config.toml`).
+- **Intelligence:** `drift.py` (where to search), `blindspot.py` (+CCTV, where to place
+  help), `mesh.py` (P2P sim), `sms.py` (no-signal fallback), `voice.py` (Sarvam/Whisper/
+  edge-tts/Claude, all fallback-safe). Geo = 50 named booths (`make_nashik_geo.py`).
+- **Env:** dev uses `.venv --system-site-packages` (folium/streamlit-folium/edge-tts/
+  faster-whisper). Run app: `.venv/bin/python -m streamlit run app/dashboard.py`.
 - **Connectivity model (decided):** LAN→central (normal) → booth↔booth P2P (only on
   LAN loss) → local queue → SMS. Booth is STAFFED (operator-mediated). [B to build]
 - **Match bands:** auto≥70 (alert a human, never auto-reunite), review≥40, else none.

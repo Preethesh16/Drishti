@@ -48,25 +48,30 @@
       registry.db + vault via `drishti.api` (no CSV, no direct SQLite). Auto-seeds (real CSV
       if present, else a built-in demo set) so the DB works with no data drop.
 - [x] **merged `backend` → `main`** (`d12f8f6`) — integrated unified dashboard
-- [ ] B3 offline queue + sync/merge (UUID dedup, terminal-wins, LWW) — supports LAN→P2P fallback
-- [ ] B5 `mesh.py` booth↔booth P2P-fallback sim (activates on LAN loss)
-- [ ] SMS-parse intake + SMS-out (simulated); zone/proximity-targeted broadcast wired to registry
+- [x] B5/B3 `mesh.py` — booth↔booth P2P-fallback sim (UUID dedup, terminal-wins, LWW,
+      converges); wired into Mesh tab. _Sim only (the agreed scope), not a real BLE stack._
+- [x] `sms.py` — SMS-parse intake (`MISSING|F|65|..`) + outbound formats; in Mesh tab
+- [x] proximity broadcast (`geo.broadcast_alert`) wired into File + Maps tabs
 - [ ] (stretch) MCP server exposing the registry as a Claude tool
+- [ ] (real-deploy only) actual P2P/SMS transport — out of hackathon scope
 
 ## Person C — Design / Frontend / Maps (`design`)
 - [x] `app/dashboard.py` skeleton — 6 tabs wired to live data
 - [x] `drishti/geo.py` — Nashik named landmarks + ~500m booth grid + haversine
       proximity + **emergency broadcast** (nearby booths in radius) + folium map
 - [x] `scripts/make_nashik_geo.py` → `data/nashik_landmarks.csv` (14 landmarks + 36 booths)
-- [x] Maps tab — live Nashik map: pick where a report lands → alert radius + booths lit red
-- [x] File tab — staffed-booth intake: language picker, landmark dropdown, file →
-      shows booths alerted; Found-flow plays containment TTS (edge-tts)
-- [~] C2 Matches tab — LIVE (B wired it: top-3 via `api.find_matches` + per-signal
-      reasons + ✅ reveal-on-confirm). Remaining: swap to `matcher_tier2.match()` for the
-      auto/review/none **bands** + Claude cross-lingual reason.
-- [ ] C3 `blindspot.py` / `drift.py` overlays (need official geo data for full version)
-- [ ] C4 branding polish + demo script
-- [ ] File-tab live retroactive match: align demo dates (stand-in is 2027 vs filed "now")
+- [x] geo → **50 booth pin-points** on a ~500m grid (hardcoded landmarks removed)
+- [x] Maps tab — 3 sub-tabs: live broadcast · **drift predictor** · **blind-spot map** (folium)
+- [x] `drift.py` (where to search) + `blindspot.py` (+CCTV gen: where to place help)
+- [x] **🎙️ Voice assistant IN the website** — mic (`st.audio_input`), free local Whisper
+      ASR + Sarvam, asks the questions in the reporter's language (TTS), Claude fills the
+      rich field set; recording kept with the case. Nothing mandatory.
+- [x] File tab — rich optional intake (names, relation, height/build/hair/complexion,
+      clothing, marks, booth) → persists via `api.file_report` → broadcast → containment
+- [x] C2 Matches tab — top-3 + per-signal reasons + **band coloring** (auto/review/low) + reveal-on-confirm
+- [x] Deploy button hidden + warm theme (`.streamlit/config.toml`)
+- [x] File→match→reveal works end-to-end (demo data re-dated to "now")
+- [ ] C4 branding polish (logo/fonts) + record a backup demo video
 
 ## Git / GitHub
 - [x] committed scaffold → `origin/main` (`d4e1ebc`)
