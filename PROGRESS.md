@@ -4,7 +4,8 @@
 **Next checkpoint:** drop real `data/Synthetic_Missing_Persons_2500.csv` → run
 `python -m setu.validate` → tune `DUP_THRESHOLD` → tag `v0.1-number`.
 
-> ⚠️ **BLOCKER:** `data/` is empty. The real number needs the 5 CSVs + 4 KMLs.
+> ✅ **Pipeline runs on STAND-IN data** (`python scripts/make_demo_data.py`).
+> ⚠️ Still need the **OFFICIAL** 5 CSVs + 4 KMLs for the real number + the maps.
 > See `data/README.md`.
 
 ---
@@ -17,8 +18,10 @@
 - [x] `setu/matcher_tier1.py` — gate + weighted weak-signal score + top-k funnel
 - [x] `setu/validate.py` — Method A (real flag) + Method B (synthetic pairs)
 - [x] Spine smoke-tested on synthetic fixture (A recall 100%, B@1 90%)
-- [ ] **Run on real 2,500-row file** → real recall + gap
-- [ ] Tune `DUP_THRESHOLD` vs the 202 → tag `v0.1-number`
+- [x] Full pipeline run on 2,500-row STAND-IN data (`scripts/make_demo_data.py`):
+      Method A recall 100% / gap 12.3 · Method B recall@1 96.5% / @3 100%
+- [ ] **Re-run on OFFICIAL file** → real recall + gap → tag `v0.1-number`
+- [ ] Tune `DUP_THRESHOLD` vs the official 202
 
 ## Person A — Core / AI (`core`)
 - [x] A1 spine (above)

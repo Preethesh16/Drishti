@@ -105,17 +105,21 @@ fixture-proven) → **(real data → tag v0.1-number)** → 5 dashboard → 6 ti
   Method B recall@1 90% / @3 100%. **Real number pending real data drop.**
 - Voice done (A4): `setu/voice.py` (Sarvam ASR/TTS/translate) + `setu/llm.py`
   (shared Claude helper). Both degrade cleanly with no keys (verified, no crash).
-- **Backend B1+B2+B4 done on `backend`** (not yet merged): `setu/vault.py` separates raw
+- **Backend B1+B2+B4 done on `backend`** (merging into main): `setu/vault.py` separates raw
   PII into an access-controlled `setu_vault.db`; `get_records` has a time-window filter;
   `add_record` fires a retroactive re-match (new `candidates` table + `get_candidates`);
   `confirm_match` does reveal-on-confirm → audit → purge and returns a dict. Proven by
   `scripts/demo_backend.py` (no data, no keys → ALL CHECKS PASSED).
 - **DB connected to the app** via `setu/api.py` (B's thin facade): the dashboard now
   reads/writes registry.db + setu_vault.db through the API (no CSV, no direct SQLite).
-  `api.ensure_seeded()` seeds from the real CSV if present, else a 9-record demo set, so
+  `api.ensure_seeded()` seeds from the stand-in CSV if present, else a 9-record demo set, so
   the connection works with no data drop. registry.db is 0644; setu_vault.db is 0600.
-- Python 3.10.12 / pandas 2.3.3 in this env (rapidfuzz optional, stdlib Jaccard fallback).
-- **BLOCKER:** `data/` is empty — user must drop the 5 CSVs + 4 KMLs. Optional keys:
+- **Pipeline runs end-to-end on STAND-IN data** (`python scripts/make_demo_data.py`
+  → `data/Synthetic_Missing_Persons_2500.csv`, 2500 rows / 202 dupes): Method A recall
+  100% / gap 12.3; Method B recall@1 96.5%. (100% expected on self-made dupes — proves
+  the pipeline. Real number awaits official 202; not yet tagged v0.1-number.)
+- Python 3.10–3.14 across dev machines (pandas 2.x/3.x; rapidfuzz optional, stdlib Jaccard fallback).
+- **Still need:** the OFFICIAL 5 CSVs + 4 KMLs (real number + maps). Optional keys:
   `SARVAM_API_KEY` (voice), `ANTHROPIC_API_KEY` (Tier-2 + structuring) in `.env`.
   (Backend logic is data-independent; only the real seed counts + the number wait on data.)
 - **Next:** real `validate` run + threshold tune → tag v0.1-number, then A3 Tier-2
