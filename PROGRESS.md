@@ -1,6 +1,6 @@
 # PROGRESS — Drishti
 
-**Current phase:** Phase 2 — workflow build (renamed to Drishti; Tier-2 + bands done).
+**Current phase:** Phase 3 — integrated build (A core + B backend + C maps merged on `main`).
 **Next checkpoint:** drop real `data/Synthetic_Missing_Persons_2500.csv` → run
 `python -m drishti.validate` → tune `DUP_THRESHOLD` → tag `v0.1-number`.
 
@@ -38,19 +38,20 @@
 
 ## Person B — Backend / DB / Sync (`backend`)
 - [x] `registry.py` working minimal base (SQLite, CRUD, confirm_match, seed_from_csv)
-- [x] B1 vault separation (`setu/vault.py`, gitignored 0600 store) + time-window query
+- [x] B1 vault separation (`drishti/vault.py`, gitignored 0600 store) + time-window query
 - [x] B2 retroactive re-match hook (`candidates` table, `get_candidates`) — fires backward
 - [x] B4 reveal-on-confirm + audit + purge (confirm_match → dict {revealed, purged})
 - [x] verified end-to-end via `scripts/demo_backend.py` (no data/keys needed) — ALL PASS
-- [x] thin API `setu/api.py` — the one door the dashboard calls (stats/list/find_matches/
+- [x] thin API `drishti/api.py` — the one door the dashboard calls (stats/list/find_matches/
       confirm/ensure_seeded); decouples C from the registry/vault internals
 - [x] **connected the DB to the app** — `app/dashboard.py` now reads/writes the live
-      registry.db + vault via `setu.api` (no CSV, no direct SQLite). Auto-seeds (real CSV
+      registry.db + vault via `drishti.api` (no CSV, no direct SQLite). Auto-seeds (real CSV
       if present, else a built-in demo set) so the DB works with no data drop.
-- [ ] B3 offline queue + sync/merge (UUID dedup, terminal-wins, LWW)
-- [ ] B5 `mesh.py` simulated DTN demo (sim only)
+- [x] **merged `backend` → `main`** (`d12f8f6`) — integrated unified dashboard
+- [ ] B3 offline queue + sync/merge (UUID dedup, terminal-wins, LWW) — supports LAN→P2P fallback
+- [ ] B5 `mesh.py` booth↔booth P2P-fallback sim (activates on LAN loss)
+- [ ] SMS-parse intake + SMS-out (simulated); zone/proximity-targeted broadcast wired to registry
 - [ ] (stretch) MCP server exposing the registry as a Claude tool
-- [ ] merge `backend` → `main` at the next green checkpoint
 
 ## Person C — Design / Frontend / Maps (`design`)
 - [x] `app/dashboard.py` skeleton — 6 tabs wired to live data
@@ -60,9 +61,12 @@
 - [x] Maps tab — live Nashik map: pick where a report lands → alert radius + booths lit red
 - [x] File tab — staffed-booth intake: language picker, landmark dropdown, file →
       shows booths alerted; Found-flow plays containment TTS (edge-tts)
-- [ ] C2 Matches tab (top-3 + bands + reveal-on-confirm) via `matcher_tier2.match()`
+- [~] C2 Matches tab — LIVE (B wired it: top-3 via `api.find_matches` + per-signal
+      reasons + ✅ reveal-on-confirm). Remaining: swap to `matcher_tier2.match()` for the
+      auto/review/none **bands** + Claude cross-lingual reason.
 - [ ] C3 `blindspot.py` / `drift.py` overlays (need official geo data for full version)
 - [ ] C4 branding polish + demo script
+- [ ] File-tab live retroactive match: align demo dates (stand-in is 2027 vs filed "now")
 
 ## Git / GitHub
 - [x] committed scaffold → `origin/main` (`d4e1ebc`)
