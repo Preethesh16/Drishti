@@ -129,7 +129,7 @@ tab using `drishti.matcher_tier2.match()`.
 
 ---
 
-## 2026-06-27 — Turn 5 — Voice fallback + Nashik map + landmark broadcast
+## 2026-06-27 — Turn 5 (A, core/design) — Voice fallback + Nashik map + landmark broadcast
 
 **Asked:** Use Sarvam + Microsoft-TTS fallback for the voice assistant (any-language
 complaint → translated structured details). Build a Nashik map with NAMED landmarks,
@@ -157,3 +157,97 @@ booths ≤1km; folium map builds; `drishti.voice` → edge-tts produces audio wi
 dashboard serves HTTP 200 with the map at localhost:8501.
 
 **Next:** Matches tab (C2) with bands + reveal; SMS-sim + P2P (B); official data → number.
+## 2026-06-27 — Turn 5 (B, backend) — registry hardening (B1 + B2 + B4)
+
+**Asked:** "I am Person B — go through the repo in depth and make the implementation."
+
+**Did (on branch `backend`, forked from latest `main` so it has A's spine + voice):**
+- **B1 — vault separation.** New `drishti/vault.py`: an access-controlled raw-PII store
+  in a SEPARATE SQLite file (`drishti_vault.db`, gitignored, chmod 0600). `init_vault`,
+  `put`, `seed_vault`, `get` (audited reveal, honours consent + purge), `purge`
+  (destroys raw, keeps a tombstone), `count`. The `records` table now holds ONLY
+  hashes + de-identified attributes — raw name/mobile never co-mingle with the
+  matchable pool. `registry.seed_from_csv` now loads records → registry.db and raw
+  → vault.db as two stores.
+- **B1 — time window.** `get_records(window_hours=, reference_time=)` scopes the pool
+  to reports within ±window of an anchor time (defaults to the newest `reported_at`),
+  so we never scan the whole historical pool. Robust `_parse_dt` FAILS OPEN so a date
+  format quirk never silently drops a real case.
+- **B2 — retroactive re-match hook.** `add_record(..., rematch=True)` auto-runs
+  `matcher_tier1.find_candidates` against the open, time-windowed pool and persists the
+  top-k into a new `candidates` table. A FOUND report sits open as bait; when the family
+  files anywhere, the match fires BACKWARD and links the two silos. `get_candidates()`
+  reads them in either direction.
+- **B4 — reveal-on-confirm + audit + purge.** `confirm_match` now: marks both Reunited →
+  REVEALS raw contact from the vault (audited, for the operator to act on) → PURGEs raw
+  PII (keeps the hash). **Contract change:** it now returns a dict
+  `{summary, revealed, purged, actor}` instead of a bare string (A/C consume the dict).
+
+**Ran:** `python -m drishti.vault` (self-check ✔) and a new `scripts/demo_backend.py`
+that builds Records in Python (NO real data, NO keys) and asserts the whole flow:
+vault has no raw columns in registry; ±72h window excludes the 45-day-old reunited
+case; M1 (family, Center-A) retroactively links to F1 (found, Center-B) at score 82.1
+[STRONG] while the male decoy is gated out; confirm reveals "Sunita Patil / 9812345678"
+then purges it (post-purge reveal denied) while the mobile HASH survives for dedup.
+Audit log shows every REVEAL / PURGE / CONFIRM_MATCH / REVEAL_DENIED line.
+`ALL CHECKS PASSED ✔`. All `drishti.*` modules still import.
+
+**Git:** committed on `backend` (not yet merged to main).
+
+**Next (B):** B3 offline queue + sync/merge (UUID dedup, terminal-status-wins, LWW —
+two offline DBs diverge then converge); B5 `mesh.py` simulated DTN demo (sim only,
+first to cut). Then merge `backend` → `main`. The real `seed_from_csv`/vault counts
+still wait on the data drop, but all B logic is data-independent and proven.
+
+---
+
+## 2026-06-27 — Turn 6 — Person B: connect the DB to the app (thin API)
+
+**Asked:** "connect the db too please" — the dashboard was reading the CSV directly
+and never touched the registry database B built.
+
+**Did (branch `backend`):**
+- **`drishti/api.py`** — the thin facade (B's stretch goal): `stats`, `list_records`,
+  `get_record`, `find_matches` (live Tier-1 vs the open, time-windowed pool),
+  `candidates`, `file_report` (→ vault + registry + B2 hook), `confirm` (reveal-on-
+  confirm), `ensure_seeded`, `reset`. Nothing outside `drishti/` touches SQLite now.
+- **`ensure_seeded()`** makes the connected DB usable with OR without the data drop:
+  seeds from the real `Synthetic_Missing_Persons_2500.csv` if present, else a small
+  built-in **demo set** (`seed_demo`: 9 records, cross-center match pairs, singletons,
+  reunited cases, 5 languages) inserted chronologically with the B2 hook live.
+- **Connected `app/dashboard.py`** to the live DB through `drishti.api` (was reading the
+  CSV via `ingest.load_records`). Registry tab = live de-identified pool from
+  registry.db; Matches tab = pick an open case → `find_matches` → score + per-signal
+  reasons → **✅ Confirm reunion** button → reveal-on-confirm shows the contact, then
+  it's purged. Sidebar shows live DB stats + a "Reset demo data" button.
+
+**Ran:** `python -m drishti.api` → seeded 9 demo records into a persistent registry.db
+(0644) + drishti_vault.db (**0600**, locked); M1→F1 = 82.1 [STRONG], M8 = 59.0 weaker
+(ranked). Headless flow of the exact dashboard calls: `confirm("M1","F1")` revealed
+"Sunita Patil / 9812345678", purged both, both Reunited, post-purge vault read = {},
+stats updated (open 7→5, reunited 2→4, vault live 9→7 / purged 0→2). `dashboard.py`
+compiles; needs `pip install -r requirements.txt` (streamlit not in this env) to
+launch the server.
+
+**Git:** committed on `backend`.
+
+**Next (B):** B3 sync/merge, B5 mesh, then merge `backend` → `main`.
+
+---
+
+## 2026-06-27 — Turn 7 — Integrate B's backend into main (merge)
+
+**Asked:** (continuation) push — surfaced that Person B had pushed real work to
+`origin/backend` (api.py, vault.py, registry B1+B2+B4, dashboard wired to the live DB).
+
+**Did:** Did NOT clobber B's branch. Merged `origin/backend` → `main`. Conflicts were
+only in `app/dashboard.py` + 2 tracking files (B's tabs vs my File/Maps tabs).
+Resolved the dashboard by COMBINING: kept B's sidebar + live Registry/Matches tabs
+(reveal-on-confirm) AND my Maps tab, and rewrote the File tab to use BOTH — my intake
+UI (language/gender/age/landmark/voice) now calls `api.file_report()` so a filed report
+persists to vault+registry, fires B2 retroactive match, broadcasts to nearby booths
+(geo), and speaks containment (voice) for found cases. Fixed B's pre-rename strings
+("Kumbh Setu"→"Drishti", `setu_vault`→`drishti_vault`).
+
+**Next:** verify the integrated app end-to-end, push main, sync core/design. (B keeps
+`backend`; can fast-forward from main.)

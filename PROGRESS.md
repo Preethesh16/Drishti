@@ -38,12 +38,19 @@
 
 ## Person B — Backend / DB / Sync (`backend`)
 - [x] `registry.py` working minimal base (SQLite, CRUD, confirm_match, seed_from_csv)
-- [ ] B1 vault separation + time-window query
-- [ ] B2 retroactive re-match hook
+- [x] B1 vault separation (`setu/vault.py`, gitignored 0600 store) + time-window query
+- [x] B2 retroactive re-match hook (`candidates` table, `get_candidates`) — fires backward
+- [x] B4 reveal-on-confirm + audit + purge (confirm_match → dict {revealed, purged})
+- [x] verified end-to-end via `scripts/demo_backend.py` (no data/keys needed) — ALL PASS
+- [x] thin API `setu/api.py` — the one door the dashboard calls (stats/list/find_matches/
+      confirm/ensure_seeded); decouples C from the registry/vault internals
+- [x] **connected the DB to the app** — `app/dashboard.py` now reads/writes the live
+      registry.db + vault via `setu.api` (no CSV, no direct SQLite). Auto-seeds (real CSV
+      if present, else a built-in demo set) so the DB works with no data drop.
 - [ ] B3 offline queue + sync/merge (UUID dedup, terminal-wins, LWW)
-- [ ] B4 reveal-on-confirm + audit + purge
 - [ ] B5 `mesh.py` simulated DTN demo (sim only)
-- [ ] (stretch) thin API / MCP server
+- [ ] (stretch) MCP server exposing the registry as a Claude tool
+- [ ] merge `backend` → `main` at the next green checkpoint
 
 ## Person C — Design / Frontend / Maps (`design`)
 - [x] `app/dashboard.py` skeleton — 6 tabs wired to live data

@@ -57,11 +57,12 @@ Age order: `['0-12','13-17','18-40','41-60','61-70','71-80','80+']`.
 Drishti/
 ├── data/ (README; stand-in CSV present; DROP official 5 CSVs + 4 KMLs here)
 ├── drishti/ __init__ · config · privacy · ingest · matcher_tier1 · matcher_tier2 · validate
-│            · registry · llm · voice
-├── app/dashboard.py (Streamlit, 6 tabs) · scripts/make_demo_data.py
+│            · registry · vault (B1) · api (B facade) · llm · voice
+├── app/dashboard.py (Streamlit, 6 tabs — wired to live DB via drishti.api) · scripts/make_demo_data.py
+├── scripts/demo_backend.py (B1/B2/B4 verification — runs with no data, no keys)
 ├── docs/ PERSON_A_CORE.md · PERSON_B_BACKEND.md · PERSON_C_DESIGN.md
 ├── PROGRESS.md · PHASE_LOG.md · CONTEXT.md · README.md · requirements.txt
-└── (todo) drishti/geo · drift · blindspot · mesh · scripts/build_geo
+└── (todo) drishti/geo · drift · blindspot · mesh (B5) · scripts/build_geo
 ```
 
 ## Team split (parallel branches → merge to main at green checkpoints)
@@ -76,10 +77,18 @@ drishti.matcher_tier1: find_candidates(target, pool, top_k=3, require_open=False
 drishti.matcher_tier2: match(target, pool, top_k=3, tier2_k=5, require_open=False) -> [EnrichedResult]
                     EnrichedResult(.case_id, .score, .band 'auto'|'review'|'none', .reason, .tier2_used)
                     band thresholds: MATCH_AUTO=70 (alert human, not auto-reunite), MATCH_REVIEW=40
-drishti.registry:      init_db, add_record, get_records(open_only, window_hours), set_status,
-                    confirm_match(a, b, actor), seed_from_csv
-drishti.privacy:       hash_pii, mask_name, mask_mobile, reveal(case_id, fields, actor, reason), audit
-drishti.validate:      run() -> {method_a, method_b}
+drishti.registry:   init_db, add_record(rec, rematch=True), set_status, seed_from_csv,
+                    get_records(open_only=False, window_hours=None, reference_time=None),
+                    get_candidates(case_id) -> [dict],     # B2 retroactive matches
+                    confirm_match(a, b, actor, reason) -> {summary, revealed, purged, actor}
+                    # ^ B4: now returns a dict (was a string); raw contact + purge happen here
+drishti.vault:      init_vault, put, seed_vault(vault), get(vid, actor=, reason=) -> {} | raw,
+                    purge(vid, actor=), count() -> (live, purged)   # access-controlled raw PII
+drishti.api:        ensure_seeded(), stats(), list_records(open_only, limit), get_record(id),
+                    find_matches(id, top_k) -> [dict], candidates(id), file_report(rec),
+                    confirm(a, b, actor, reason)   # THE door the dashboard calls (B's facade)
+drishti.privacy:    hash_pii, mask_name, mask_mobile, reveal(case_id, fields, actor, reason), audit
+drishti.validate:   run() -> {method_a, method_b}
 ```
 
 ## Tech (all free, offline-capable core)
@@ -99,19 +108,26 @@ fixture-proven) → **(real data → tag v0.1-number)** → 5 dashboard → 6 ti
   `voice.py` (Sarvam ASR/translate/TTS + **free edge-tts + Claude fallbacks**;
   any-language → English structured details); `matcher_tier2.py` (Claude cross-lingual
   + bands); `geo.py` (**Nashik named landmarks + ~500m booth grid + emergency
-  broadcast + folium map**); registry base; dashboard (Maps + File tabs LIVE);
-  data + nashik-geo generators. All fallback-safe.
-- **Env:** dev uses `.venv --system-site-packages` (folium/streamlit-folium/edge-tts
-  added; system has pandas/streamlit). Run app: `.venv/bin/python -m streamlit run app/dashboard.py`.
+  broadcast + folium map**); data + nashik-geo generators. All fallback-safe.
+- **Backend (B) B1+B2+B4 + API** (merged to main): `drishti/vault.py` separates raw PII
+  into access-controlled `drishti_vault.db`; `registry.get_records` has a time-window
+  filter; `add_record(rematch=True)` fires retroactive re-match (`candidates` table);
+  `confirm_match` = reveal-on-confirm → audit → purge, returns a dict. `drishti/api.py`
+  is the thin facade (stats/list_records/find_matches/file_report/confirm/ensure_seeded);
+  the dashboard reads/writes the DB through it (no CSV, no direct SQLite). Proven by
+  `scripts/demo_backend.py` (no data/keys → ALL CHECKS PASSED).
+- **Dashboard (integrated):** sidebar live DB stats; Registry + Matches (reveal-on-confirm)
+  wired to `api`; **File tab** intake persists via `api.file_report` + geo broadcast +
+  voice containment; **Maps tab** live Nashik map. Run via `.venv/bin/python -m streamlit`.
+- **Env:** dev uses `.venv --system-site-packages` (folium/streamlit-folium/edge-tts added).
 - **Connectivity model (decided):** LAN→central (normal) → booth↔booth P2P (only on
   LAN loss) → local queue → SMS. Booth is STAFFED (operator-mediated). [B to build]
 - **Match bands:** auto≥70 (alert a human, never auto-reunite), review≥40, else none.
 - **Pipeline green on STAND-IN data** (`python scripts/make_demo_data.py`): Method A
   recall 100% / gap 12.3; Method B recall@1 ~97%. (100% expected on self-made dupes —
   proves the pipeline; real number awaits official 202; not yet tagged v0.1-number.)
-- Python 3.14.5, pandas 3.0.2 (rapidfuzz optional; stdlib fallback).
+- Python 3.10–3.14 across dev machines (pandas 2.x/3.x; rapidfuzz optional, stdlib Jaccard fallback).
 - **Still need:** OFFICIAL 5 CSVs + 4 KMLs (real number + maps). Optional keys:
   `SARVAM_API_KEY` (voice), `ANTHROPIC_API_KEY` (Tier-2 + structuring) in `.env`.
-- **Next:** A — lock the number when data lands. B — B1 registry + connectivity
-  ladder/SMS-sim. C — C1 intake + Matches tab via `matcher_tier2.match()` + maps (geo-data-gated).
-  (A); registry hardening B1 (B); intake UI + branding C1 (C).
+- **Next:** A — lock the number when data lands. B — B3 sync/merge + B5 mesh, then merge
+  `backend`→`main`. C — C1 intake + Matches tab via `matcher_tier2.match()` + maps.
