@@ -72,3 +72,30 @@ structuring/audio fall back to None as designed. All modules import OK.
 
 **Next:** (A) wait for data → lock the number, then A3 Tier-2. (B) start B1 on
 `backend`. (C) start C1 on `design`. (User) drop data + get SARVAM/ANTHROPIC keys.
+
+---
+
+## 2026-06-27 — Turn 3 — "run it" → full pipeline on stand-in data
+
+**Asked:** Run it for me.
+
+**Did:** Official data still absent, so wrote `scripts/make_demo_data.py` — a
+realistic STAND-IN generator matching spec §3 distributions (2,500 rows, 202 hidden
+duplicates, 8 langs, 10 centers, 20 locations, elderly-skewed ages, ~15% blank names,
+~20% blank mobiles, paraphrased/synonym-swapped duplicate descriptions). Ran the full
+spine on it.
+
+**Ran & result (STAND-IN data, NOT official):**
+- generate → 2,500 rows / 202 dupes.
+- `setu.ingest` → seeded 2500, 202 ground-truth dupes, 548 blank names, 449 open.
+- `setu.matcher_tier1` → top-3 with explainable per-signal reasons (sample top score 91.6).
+- `setu.validate` → Method A recall **100%** / gap **12.3** (flagged 84.4 vs non 72.1);
+  Method B recall@1 **96.5%** / @3 **100%** / @5 **100%**.
+- 100% is expected on self-generated findable dupes — proves the PIPELINE, not difficulty.
+  Real number awaits the official 202. Did NOT tag v0.1-number yet (hold for official data).
+
+**Git:** committed generator + stand-in CSV + tracking on `main`; fast-forwarded
+`core`/`backend`/`design` to main so all teammates have data + latest contracts.
+
+**Next:** (User) drop official file → I re-run + tune threshold + tag v0.1-number.
+(B) B1 registry hardening. (C) C1 intake + branding (dashboard runs against stand-in now).
